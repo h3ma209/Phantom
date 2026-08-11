@@ -8,11 +8,11 @@ Framework: **ESP-IDF** via PlatformIO (`framework = espidf`). Pins in `src/main.
 |-------------|-------------|------|-------|
 | VCC         | **3V3**     | —    | Prefer 3.3V |
 | GND         | **GND**     | —    | |
-| CS          | **P15**     | 15   | Strapping — OK after boot |
-| RESET       | **P4**      | 4    | Do not leave floating |
-| DC / RS     | **P2**      | 2    | Strapping / onboard LED |
-| SDI (MOSI)  | **P23**     | 23   | |
-| SCK         | **P18**     | 18   | |
+| CS          | **P15**(4)     | 15   | Strapping — OK after boot |
+| RESET       | **P4**  (7)    | 4    | Do not leave floating |
+| DC / RS     | **P2**   (5)   | 2    | Strapping / onboard LED |
+| SDI (MOSI)  | **P23**(18)     | 23   | |
+| SCK         | **P18**  (11)   | 18   | |
 | LED         | **3V3**     | —    | **Prefer hardwire to 3V3** (always on). P21 optional PWM later |
 
 
@@ -37,15 +37,25 @@ Framework: **ESP-IDF** via PlatformIO (`framework = espidf`). Pins in `src/main.
 
 | Encoder | Board | GPIO | Role |
 |---------|-------|------|------|
-| **CLK** | **P25** | 25 | Rotate A |
-| **DT**  | **P26** | 26 | Rotate B |
-| **SW**  | **P27** | 27 | Click (press shaft) |
+| **CLK** | **P25**(11) | 25 | Rotate A |
+| **DT**  | **P26**(10) | 26 | Rotate B |
+| **SW**  | **P27**(9
+) | 27 | Click (press shaft) |
 | **+**   | **3V3** | — | Power (3.3V, not 5V) |
 | **GND** | **GND** | — | Ground |
 
 Controls:
 - **Turn** → move menu selection
 - **Click (SW)** → open item / back from detail
+
+## BT Exploits → HID Keyboard
+
+BLE keyboard for **your** PC. Advertises as `DEDSEC KBD`.
+
+1. Open **BT Exploits** → **HID Keyboard**
+2. On PC: Bluetooth → add device → **DEDSEC KBD**
+3. After pair, node types `hello from dedsec node`
+4. Click again to retype. Turn encoder to go back.
 
 If direction feels reversed, swap CLK↔DT wires or flip CW/CCW in `encoder.c`.
 
