@@ -32,6 +32,13 @@ void gfx_init(esp_lcd_panel_handle_t panel);
 void gfx_fill_screen(uint16_t color);
 void gfx_fill_rect(int x, int y, int w, int h, uint16_t color);
 void gfx_draw_string(int x, int y, const char *s, uint16_t fg, uint16_t bg, int scale);
+/* draw only glyph pixels; leave bg untouched */
+void gfx_draw_string_fg(int x, int y, const char *s, uint16_t fg, int scale);
+int gfx_string_width(const char *s, int scale);
 void gfx_draw_icon(int x, int y, ui_icon_t icon, uint16_t fg, uint16_t bg);
+/* nearest-neighbor scale of 24px icon (scale >= 1) */
+void gfx_draw_icon_scaled(int x, int y, ui_icon_t icon, uint16_t fg, int scale);
 /* host-order RGB565 image (bytes swapped on blit), DMA-safe */
 void gfx_draw_image_rgb565(int x, int y, int w, int h, const uint16_t *img);
+/* skip pixels equal to key (host RGB565, usually COL_BLACK) */
+void gfx_draw_image_key(int x, int y, int w, int h, const uint16_t *img, uint16_t key);

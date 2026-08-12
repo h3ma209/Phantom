@@ -153,6 +153,18 @@ void gfx_fill_screen(uint16_t color)
     gfx_fill_rect(0, 0, LCD_W, LCD_H, color);
 }
 
+int gfx_string_width(const char *s, int scale)
+{
+    if (!s || scale < 1) {
+        return 0;
+    }
+    int len = 0;
+    while (s[len]) {
+        len++;
+    }
+    return len * 8 * scale;
+}
+
 void gfx_draw_string(int x, int y, const char *s, uint16_t fg, uint16_t bg, int scale)
 {
     if (!s || scale < 1) {
@@ -198,6 +210,53 @@ void gfx_draw_string(int x, int y, const char *s, uint16_t fg, uint16_t bg, int 
     }
 }
 
+void gfx_draw_string_fg(int x, int y, const char *s, uint16_t fg, int scale)
+{
+    if (!s || scale < 1) {
+        return;
+    }
+    uint16_t f = swap565(fg);
+    int cx = x;
+    for (const char *p = s; *p; p++) {
+        char chv = *p;
+        if (chv < 32 || chv > 127) {
+            chv = '?';
+        }
+        const uint8_t *glyph = FONT8[chv - 32];
+        for (int row = 0; row < 8; row++) {
+            uint8_t bits = glyph[row];
+            for (int col = 0; col < 8; col++) {
+                if (!(bits & (1 << col))) {
+                    continue;
+                }
+                int px = cx + col * scale;
+                int py = y + row * scale;
+                if (px < 0 || py < 0 || px >= LCD_W || py >= LCD_H) {
+                    continue;
+                }
+                int rw = scale;
+                int rh = scale;
+                if (px + rw > LCD_W) {
+                    rw = LCD_W - px;
+                }
+                if (py + rh > LCD_H) {
+                    rh = LCD_H - py;
+                }
+                for (int i = 0; i < rw; i++) {
+                    s_line[i] = f;
+                }
+                for (int t = 0; t < rh; t++) {
+                    ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(s_panel, px, py + t, px + rw, py + t + 1, s_line));
+                }
+            }
+        }
+        cx += 8 * scale;
+        if (cx >= LCD_W) {
+            break;
+        }
+    }
+}
+
 static void plot(uint16_t *buf, int w, int px, int py, uint16_t c)
 {
     if (px >= 0 && py >= 0 && px < w && py < w) {
@@ -205,7 +264,7 @@ static void plot(uint16_t *buf, int w, int px, int py, uint16_t c)
     }
 }
 
-void gfx_draw_icon(int x, int y, ui_icon_t icon, uint16_t fg, uint16_t bg)
+static void render_icon(ui_icon_t icon, uint16_t fg, uint16_t bg)
 {
     enum { S = 24 };
     uint16_t c = swap565(fg);
@@ -342,8 +401,52 @@ void gfx_draw_icon(int x, int y, ui_icon_t icon, uint16_t fg, uint16_t bg)
     default:
         break;
     }
+}
 
+void gfx_draw_icon(int x, int y, ui_icon_t icon, uint16_t fg, uint16_t bg)
+{
+    enum { S = 24 };
+    render_icon(icon, fg, bg);
     ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(s_panel, x, y, x + S, y + S, s_icon));
+}
+
+void gfx_draw_icon_scaled(int x, int y, ui_icon_t icon, uint16_t fg, int scale)
+{
+    enum { S = 24 };
+    if (scale < 1) {
+        return;
+    }
+    /* magenta key so only fg pixels blit */
+    render_icon(icon, fg, 0xF81F);
+    const uint16_t key = swap565(0xF81F);
+    const uint16_t f = swap565(fg);
+    const int out = S * scale;
+    for (int row = 0; row < out; row++) {
+        int sy = row / scale;
+        int run_x = -1;
+        int run_w = 0;
+        for (int col = 0; col < out; col++) {
+            int sx = col / scale;
+            uint16_t p = s_icon[sy * S + sx];
+            if (p == key) {
+                if (run_w > 0) {
+                    ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(
+                        s_panel, x + run_x, y + row, x + run_x + run_w, y + row + 1, s_line));
+                    run_w = 0;
+                    run_x = -1;
+                }
+                continue;
+            }
+            if (run_w == 0) {
+                run_x = col;
+            }
+            s_line[run_w++] = f;
+        }
+        if (run_w > 0) {
+            ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(
+                s_panel, x + run_x, y + row, x + run_x + run_w, y + row + 1, s_line));
+        }
+    }
 }
 
 void gfx_draw_image_rgb565(int x, int y, int w, int h, const uint16_t *img)
@@ -354,5 +457,33 @@ void gfx_draw_image_rgb565(int x, int y, int w, int h, const uint16_t *img)
             s_line[col] = (uint16_t)((p >> 8) | (p << 8));
         }
         ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(s_panel, x, y + row, x + w, y + row + 1, s_line));
+    }
+}
+
+void gfx_draw_image_key(int x, int y, int w, int h, const uint16_t *img, uint16_t key)
+{
+    for (int row = 0; row < h; row++) {
+        int run_x = -1;
+        int run_w = 0;
+        for (int col = 0; col < w; col++) {
+            uint16_t p = img[row * w + col];
+            if (p == key) {
+                if (run_w > 0) {
+                    ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(
+                        s_panel, x + run_x, y + row, x + run_x + run_w, y + row + 1, s_line));
+                    run_w = 0;
+                    run_x = -1;
+                }
+                continue;
+            }
+            if (run_w == 0) {
+                run_x = col;
+            }
+            s_line[run_w++] = (uint16_t)((p >> 8) | (p << 8));
+        }
+        if (run_w > 0) {
+            ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(
+                s_panel, x + run_x, y + row, x + run_x + run_w, y + row + 1, s_line));
+        }
     }
 }
