@@ -153,6 +153,34 @@ void gfx_fill_screen(uint16_t color)
     gfx_fill_rect(0, 0, LCD_W, LCD_H, color);
 }
 
+void gfx_draw_rect(int x, int y, int w, int h, uint16_t color)
+{
+    if (w <= 0 || h <= 0) {
+        return;
+    }
+    gfx_fill_rect(x, y, w, 1, color);
+    gfx_fill_rect(x, y + h - 1, w, 1, color);
+    gfx_fill_rect(x, y, 1, h, color);
+    gfx_fill_rect(x + w - 1, y, 1, h, color);
+}
+
+void gfx_draw_rect_sketch(int x, int y, int w, int h, uint16_t color)
+{
+    /* jagged border: offset segments */
+    static const int8_t jit[] = {0, 1, 0, -1, 1, 0, -1, 0, 1, -1};
+    const int n = (int)(sizeof(jit) / sizeof(jit[0]));
+    for (int i = 0; i < w; i++) {
+        int j = jit[i % n];
+        gfx_fill_rect(x + i, y + j, 1, 1, color);
+        gfx_fill_rect(x + i, y + h - 1 - j, 1, 1, color);
+    }
+    for (int i = 0; i < h; i++) {
+        int j = jit[i % n];
+        gfx_fill_rect(x + j, y + i, 1, 1, color);
+        gfx_fill_rect(x + w - 1 - j, y + i, 1, 1, color);
+    }
+}
+
 int gfx_string_width(const char *s, int scale)
 {
     if (!s || scale < 1) {
@@ -251,6 +279,108 @@ void gfx_draw_string_fg(int x, int y, const char *s, uint16_t fg, int scale)
             }
         }
         cx += 8 * scale;
+        if (cx >= LCD_W) {
+            break;
+        }
+    }
+}
+
+int gfx_string6_width(const char *s)
+{
+    if (!s) {
+        return 0;
+    }
+    int len = 0;
+    while (s[len]) {
+        len++;
+    }
+    return len * 6;
+}
+
+static void glyph6_row(uint8_t bits, uint16_t f, uint16_t b, uint16_t *dst)
+{
+    /* sample 8 cols -> 6: indices 0,1,3,4,6,7 */
+    static const uint8_t COLMAP[6] = {0, 1, 3, 4, 6, 7};
+    for (int i = 0; i < 6; i++) {
+        dst[i] = (bits & (1 << COLMAP[i])) ? f : b;
+    }
+}
+
+void gfx_draw_string6(int x, int y, const char *s, uint16_t fg, uint16_t bg)
+{
+    if (!s) {
+        return;
+    }
+    int len = 0;
+    while (s[len]) {
+        len++;
+    }
+    if (len == 0) {
+        return;
+    }
+    int max_chars = (LCD_W - x) / 6;
+    if (max_chars <= 0) {
+        return;
+    }
+    if (len > max_chars) {
+        len = max_chars;
+    }
+    uint16_t f = swap565(fg);
+    uint16_t b = swap565(bg);
+    static const uint8_t ROWMAP[6] = {0, 1, 3, 4, 6, 7};
+    for (int row = 0; row < 6; row++) {
+        int glyph_row = ROWMAP[row];
+        for (int ci = 0; ci < len; ci++) {
+            char chv = s[ci];
+            if (chv < 32 || chv > 127) {
+                chv = '?';
+            }
+            glyph6_row(FONT8[chv - 32][glyph_row], f, b, &s_line[ci * 6]);
+        }
+        ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(s_panel, x, y + row, x + len * 6, y + row + 1, s_line));
+    }
+}
+
+void gfx_draw_string6_fg(int x, int y, const char *s, uint16_t fg)
+{
+    if (!s) {
+        return;
+    }
+    uint16_t f = swap565(fg);
+    static const uint8_t COLMAP[6] = {0, 1, 3, 4, 6, 7};
+    static const uint8_t ROWMAP[6] = {0, 1, 3, 4, 6, 7};
+    int cx = x;
+    for (const char *p = s; *p; p++) {
+        char chv = *p;
+        if (chv < 32 || chv > 127) {
+            chv = '?';
+        }
+        const uint8_t *glyph = FONT8[chv - 32];
+        for (int row = 0; row < 6; row++) {
+            uint8_t bits = glyph[ROWMAP[row]];
+            int run_x = -1;
+            int run_w = 0;
+            for (int col = 0; col < 6; col++) {
+                if (!(bits & (1 << COLMAP[col]))) {
+                    if (run_w > 0) {
+                        ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(
+                            s_panel, cx + run_x, y + row, cx + run_x + run_w, y + row + 1, s_line));
+                        run_w = 0;
+                        run_x = -1;
+                    }
+                    continue;
+                }
+                if (run_w == 0) {
+                    run_x = col;
+                }
+                s_line[run_w++] = f;
+            }
+            if (run_w > 0) {
+                ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(
+                    s_panel, cx + run_x, y + row, cx + run_x + run_w, y + row + 1, s_line));
+            }
+        }
+        cx += 6;
         if (cx >= LCD_W) {
             break;
         }

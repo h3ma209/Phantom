@@ -12,9 +12,11 @@
 #define COL_RED     0xF800
 #define COL_WHITE   0xFFFF
 #define COL_GREEN   0x07E0
+#define COL_PURPLE  0x981F
 #define COL_DIM     0x4208
 #define COL_PANEL   0x1082
 #define COL_SELECT  0x0320
+
 
 typedef enum {
     ICON_WIFI = 0,
@@ -31,10 +33,17 @@ typedef enum {
 void gfx_init(esp_lcd_panel_handle_t panel);
 void gfx_fill_screen(uint16_t color);
 void gfx_fill_rect(int x, int y, int w, int h, uint16_t color);
+void gfx_draw_rect(int x, int y, int w, int h, uint16_t color);
+/* rough sketchy border (offset edges) */
+void gfx_draw_rect_sketch(int x, int y, int w, int h, uint16_t color);
 void gfx_draw_string(int x, int y, const char *s, uint16_t fg, uint16_t bg, int scale);
 /* draw only glyph pixels; leave bg untouched */
 void gfx_draw_string_fg(int x, int y, const char *s, uint16_t fg, int scale);
+/* 6x6 glyphs (sampled from 8x8) — denser UI text */
+void gfx_draw_string6(int x, int y, const char *s, uint16_t fg, uint16_t bg);
+void gfx_draw_string6_fg(int x, int y, const char *s, uint16_t fg);
 int gfx_string_width(const char *s, int scale);
+int gfx_string6_width(const char *s);
 void gfx_draw_icon(int x, int y, ui_icon_t icon, uint16_t fg, uint16_t bg);
 /* nearest-neighbor scale of 24px icon (scale >= 1) */
 void gfx_draw_icon_scaled(int x, int y, ui_icon_t icon, uint16_t fg, int scale);
