@@ -1,21 +1,22 @@
-#include "hid_kbd.h"
+#include "ble_hid_keyboard.h"
 
 #include <string.h>
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_hidd.h"
-#include "esp_hid_gap.h"
+#include "ble_hid_gap.h"
 #include "nvs_flash.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 #if CONFIG_BT_NIMBLE_ENABLED
 #include "host/ble_hs.h"
+#include "host/ble_gap.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #endif
 
-static const char *TAG = "hid_kbd";
+static const char *TAG = "ble_hid_kbd";
 
 #define USB_HID_MODIFIER_LEFT_SHIFT 0x02
 #define USB_HID_SPACE               0x2C
@@ -51,6 +52,8 @@ static esp_hid_device_config_t s_cfg = {
 static esp_hidd_dev_t *s_dev;
 static volatile bool s_connected;
 static bool s_started;
+static bool s_stack_ready;
+static bool s_want_adv;
 
 #if CONFIG_BT_NIMBLE_ENABLED
 void ble_store_config_init(void);
@@ -68,6 +71,48 @@ static void hid_host_task(void *param)
 }
 #endif
 
+bool ble_hid_keyboard_stack_ready(void)
+{
+    return s_stack_ready;
+}
+
+void ble_hid_keyboard_mark_stack_ready(void)
+{
+    s_stack_ready = true;
+}
+
+bool ble_hid_keyboard_want_adv(void)
+{
+    return s_want_adv && s_started;
+}
+
+void ble_hid_keyboard_set_want_adv(bool on)
+{
+    s_want_adv = on;
+}
+
+void ble_hid_keyboard_pause_adv(void)
+{
+#if CONFIG_BT_NIMBLE_ENABLED
+    if (!s_stack_ready || !ble_hs_synced()) {
+        return;
+    }
+    ble_gap_adv_stop();
+#endif
+}
+
+void ble_hid_keyboard_resume_adv_if_active(void)
+{
+#if CONFIG_BT_NIMBLE_ENABLED
+    if (!s_stack_ready || !ble_hs_synced()) {
+        return;
+    }
+    if (s_want_adv && s_started && !s_connected) {
+        esp_hid_ble_gap_adv_start();
+    }
+#endif
+}
+
 static void hid_cb(void *handler_args, esp_event_base_t base, int32_t id, void *event_data)
 {
     (void)handler_args;
@@ -77,8 +122,10 @@ static void hid_cb(void *handler_args, esp_event_base_t base, int32_t id, void *
 
     switch (event) {
     case ESP_HIDD_START_EVENT:
-        ESP_LOGI(TAG, "advertising");
-        esp_hid_ble_gap_adv_start();
+        ESP_LOGI(TAG, "HIDD start");
+        if (s_want_adv) {
+            esp_hid_ble_gap_adv_start();
+        }
         break;
     case ESP_HIDD_CONNECT_EVENT:
         ESP_LOGI(TAG, "connected");
@@ -87,7 +134,9 @@ static void hid_cb(void *handler_args, esp_event_base_t base, int32_t id, void *
     case ESP_HIDD_DISCONNECT_EVENT:
         ESP_LOGI(TAG, "disconnected");
         s_connected = false;
-        esp_hid_ble_gap_adv_start();
+        if (s_want_adv) {
+            esp_hid_ble_gap_adv_start();
+        }
         break;
     case ESP_HIDD_STOP_EVENT:
         s_connected = false;
@@ -127,9 +176,13 @@ static void char_to_code(uint8_t *buf, char ch)
     }
 }
 
-esp_err_t hid_kbd_start(void)
+esp_err_t ble_hid_keyboard_start(void)
 {
     if (s_started) {
+        s_want_adv = true;
+        if (!s_connected) {
+            esp_hid_ble_gap_adv_start();
+        }
         return ESP_OK;
     }
 
@@ -140,33 +193,58 @@ esp_err_t hid_kbd_start(void)
     }
     ESP_RETURN_ON_ERROR(ret, TAG, "nvs");
 
-    ESP_RETURN_ON_ERROR(esp_hid_gap_init(HIDD_BLE_MODE), TAG, "gap init");
+    if (!s_stack_ready) {
+        ESP_RETURN_ON_ERROR(esp_hid_gap_init(HIDD_BLE_MODE), TAG, "gap init");
+    }
+
     ESP_RETURN_ON_ERROR(
         esp_hid_ble_gap_adv_init(ESP_HID_APPEARANCE_KEYBOARD, s_cfg.device_name), TAG, "adv init");
-    ESP_RETURN_ON_ERROR(
-        esp_hidd_dev_init(&s_cfg, ESP_HID_TRANSPORT_BLE, hid_cb, &s_dev), TAG, "hidd init");
 
 #if CONFIG_BT_NIMBLE_ENABLED
-    ble_store_config_init();
-    ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
-    ret = esp_nimble_enable(hid_host_task);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "nimble enable %d", ret);
-        return ret;
+    /* Start host BEFORE hidd so START_EVENT can advertise on a synced stack. */
+    if (!s_stack_ready) {
+        ble_store_config_init();
+        ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+        ret = esp_nimble_enable(hid_host_task);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "nimble enable %d", ret);
+            return ret;
+        }
+        for (int i = 0; i < 100 && !ble_hs_synced(); i++) {
+            vTaskDelay(pdMS_TO_TICKS(20));
+        }
+        if (!ble_hs_synced()) {
+            ESP_LOGE(TAG, "nimble not synced");
+            return ESP_ERR_TIMEOUT;
+        }
+        s_stack_ready = true;
     }
 #endif
 
+    s_want_adv = true;
+    ESP_RETURN_ON_ERROR(
+        esp_hidd_dev_init(&s_cfg, ESP_HID_TRANSPORT_BLE, hid_cb, &s_dev), TAG, "hidd init");
+
     s_started = true;
+    /* Force advertise even if START_EVENT already fired early. */
+    vTaskDelay(pdMS_TO_TICKS(100));
+    if (!s_connected) {
+        ret = esp_hid_ble_gap_adv_start();
+        if (ret != ESP_OK) {
+            ESP_LOGW(TAG, "adv_start after init: %d", ret);
+        }
+    }
+
     ESP_LOGI(TAG, "HID keyboard advertising as '%s'", s_cfg.device_name);
     return ESP_OK;
 }
 
-bool hid_kbd_is_connected(void)
+bool ble_hid_keyboard_is_connected(void)
 {
     return s_connected;
 }
 
-void hid_kbd_type(const char *text)
+void ble_hid_keyboard_type(const char *text)
 {
     if (!s_connected || !s_dev || !text) {
         return;

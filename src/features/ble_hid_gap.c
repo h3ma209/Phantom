@@ -13,13 +13,14 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-#include "esp_hid_gap.h"
+#include "ble_hid_gap.h"
 
 #if CONFIG_BT_NIMBLE_ENABLED
 #include "host/ble_hs.h"
 #include "nimble/nimble_port.h"
 #include "host/ble_gap.h"
 #include "host/ble_hs_adv.h"
+#include "host/util/util.h"
 #include "nimble/ble.h"
 #include "host/ble_sm.h"
 #else
@@ -769,7 +770,7 @@ esp_err_t esp_hid_ble_gap_adv_init(uint16_t appearance, const char *device_name)
     fields.flags = BLE_HS_ADV_F_DISC_GEN |
                    BLE_HS_ADV_F_BREDR_UNSUP;
 
-    fields.appearance = ESP_HID_APPEARANCE_GENERIC;
+    fields.appearance = appearance;
     fields.appearance_is_present = 1;
 
     /* Indicate that the TX power level field should be included; have the
@@ -793,9 +794,9 @@ esp_err_t esp_hid_ble_gap_adv_init(uint16_t appearance, const char *device_name)
     fields.uuids16_is_complete = 1;
 
     /* Initialize the security configuration */
-    ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_DISP_ONLY;
+    ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_NO_IO;
     ble_hs_cfg.sm_bonding = 1;
-    ble_hs_cfg.sm_mitm = 1;
+    ble_hs_cfg.sm_mitm = 0;
     ble_hs_cfg.sm_sc = 1;
     ble_hs_cfg.sm_our_key_dist = BLE_SM_PAIR_KEY_DIST_ID | BLE_SM_PAIR_KEY_DIST_ENC;
     ble_hs_cfg.sm_their_key_dist |= BLE_SM_PAIR_KEY_DIST_ID | BLE_SM_PAIR_KEY_DIST_ENC;
@@ -926,27 +927,45 @@ esp_err_t esp_hid_ble_gap_adv_start(void)
 {
     int rc;
     struct ble_gap_adv_params adv_params;
-    /* maximum possible duration for hid device(180s) */
-    int32_t adv_duration_ms = 180000;
+    uint8_t own_addr_type;
+
+    /* Prefer any usable address (public or random). PUBLIC alone fails on many boards
+     * when NimBLE privacy / no public identity is available. */
+    rc = ble_hs_util_ensure_addr(0);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "ensure_addr rc=%d", rc);
+        return ESP_FAIL;
+    }
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "infer_auto rc=%d", rc);
+        return ESP_FAIL;
+    }
+
+    rc = ble_gap_adv_stop();
+    (void)rc;
 
     rc = ble_gap_adv_set_fields(&fields);
     if (rc != 0) {
-        MODLOG_DFLT(ERROR, "error setting advertisement data; rc=%d\n", rc);
+        ESP_LOGE(TAG, "adv_set_fields rc=%d", rc);
         return rc;
     }
-    /* Begin advertising. */
+
     memset(&adv_params, 0, sizeof adv_params);
     adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
     adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
-    adv_params.itvl_min = BLE_GAP_ADV_ITVL_MS(30);/* Recommended interval 30ms to 50ms */
+    adv_params.itvl_min = BLE_GAP_ADV_ITVL_MS(30);
     adv_params.itvl_max = BLE_GAP_ADV_ITVL_MS(50);
-    rc = ble_gap_adv_start(BLE_OWN_ADDR_PUBLIC, NULL, adv_duration_ms,
+
+    /* Advertise forever (old 180s timeout made keyboard vanish). */
+    rc = ble_gap_adv_start(own_addr_type, NULL, BLE_HS_FOREVER,
                            &adv_params, nimble_hid_gap_event, NULL);
     if (rc != 0) {
-        MODLOG_DFLT(ERROR, "error enabling advertisement; rc=%d\n", rc);
+        ESP_LOGE(TAG, "adv_start rc=%d addr_type=%u", rc, own_addr_type);
         return rc;
     }
-    return rc;
+    ESP_LOGI(TAG, "HID advertising (addr_type=%u)", own_addr_type);
+    return ESP_OK;
 }
 #endif
 

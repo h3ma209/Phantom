@@ -1,4 +1,4 @@
-#include "gfx.h"
+#include "display_draw.h"
 #include <string.h>
 #include "esp_log.h"
 
@@ -111,12 +111,12 @@ static inline uint16_t swap565(uint16_t c)
     return (uint16_t)((c >> 8) | (c << 8));
 }
 
-void gfx_init(esp_lcd_panel_handle_t panel)
+void display_draw_init(esp_lcd_panel_handle_t panel)
 {
     s_panel = panel;
 }
 
-void gfx_fill_rect(int x, int y, int w, int h, uint16_t color)
+void display_draw_fill_rect(int x, int y, int w, int h, uint16_t color)
 {
     if (w <= 0 || h <= 0) {
         return;
@@ -148,40 +148,40 @@ void gfx_fill_rect(int x, int y, int w, int h, uint16_t color)
     }
 }
 
-void gfx_fill_screen(uint16_t color)
+void display_draw_fill_screen(uint16_t color)
 {
-    gfx_fill_rect(0, 0, LCD_W, LCD_H, color);
+    display_draw_fill_rect(0, 0, LCD_W, LCD_H, color);
 }
 
-void gfx_draw_rect(int x, int y, int w, int h, uint16_t color)
+void display_draw_rect(int x, int y, int w, int h, uint16_t color)
 {
     if (w <= 0 || h <= 0) {
         return;
     }
-    gfx_fill_rect(x, y, w, 1, color);
-    gfx_fill_rect(x, y + h - 1, w, 1, color);
-    gfx_fill_rect(x, y, 1, h, color);
-    gfx_fill_rect(x + w - 1, y, 1, h, color);
+    display_draw_fill_rect(x, y, w, 1, color);
+    display_draw_fill_rect(x, y + h - 1, w, 1, color);
+    display_draw_fill_rect(x, y, 1, h, color);
+    display_draw_fill_rect(x + w - 1, y, 1, h, color);
 }
 
-void gfx_draw_rect_sketch(int x, int y, int w, int h, uint16_t color)
+void display_draw_rect_sketch(int x, int y, int w, int h, uint16_t color)
 {
     /* jagged border: offset segments */
     static const int8_t jit[] = {0, 1, 0, -1, 1, 0, -1, 0, 1, -1};
     const int n = (int)(sizeof(jit) / sizeof(jit[0]));
     for (int i = 0; i < w; i++) {
         int j = jit[i % n];
-        gfx_fill_rect(x + i, y + j, 1, 1, color);
-        gfx_fill_rect(x + i, y + h - 1 - j, 1, 1, color);
+        display_draw_fill_rect(x + i, y + j, 1, 1, color);
+        display_draw_fill_rect(x + i, y + h - 1 - j, 1, 1, color);
     }
     for (int i = 0; i < h; i++) {
         int j = jit[i % n];
-        gfx_fill_rect(x + j, y + i, 1, 1, color);
-        gfx_fill_rect(x + w - 1 - j, y + i, 1, 1, color);
+        display_draw_fill_rect(x + j, y + i, 1, 1, color);
+        display_draw_fill_rect(x + w - 1 - j, y + i, 1, 1, color);
     }
 }
 
-int gfx_string_width(const char *s, int scale)
+int display_draw_string_width(const char *s, int scale)
 {
     if (!s || scale < 1) {
         return 0;
@@ -193,7 +193,7 @@ int gfx_string_width(const char *s, int scale)
     return len * 8 * scale;
 }
 
-void gfx_draw_string(int x, int y, const char *s, uint16_t fg, uint16_t bg, int scale)
+void display_draw_string(int x, int y, const char *s, uint16_t fg, uint16_t bg, int scale)
 {
     if (!s || scale < 1) {
         return;
@@ -238,7 +238,7 @@ void gfx_draw_string(int x, int y, const char *s, uint16_t fg, uint16_t bg, int 
     }
 }
 
-void gfx_draw_string_fg(int x, int y, const char *s, uint16_t fg, int scale)
+void display_draw_string_fg(int x, int y, const char *s, uint16_t fg, int scale)
 {
     if (!s || scale < 1) {
         return;
@@ -285,7 +285,7 @@ void gfx_draw_string_fg(int x, int y, const char *s, uint16_t fg, int scale)
     }
 }
 
-int gfx_string6_width(const char *s)
+int display_draw_string6_width(const char *s)
 {
     if (!s) {
         return 0;
@@ -306,7 +306,7 @@ static void glyph6_row(uint8_t bits, uint16_t f, uint16_t b, uint16_t *dst)
     }
 }
 
-void gfx_draw_string6(int x, int y, const char *s, uint16_t fg, uint16_t bg)
+void display_draw_string6(int x, int y, const char *s, uint16_t fg, uint16_t bg)
 {
     if (!s) {
         return;
@@ -341,7 +341,7 @@ void gfx_draw_string6(int x, int y, const char *s, uint16_t fg, uint16_t bg)
     }
 }
 
-void gfx_draw_string6_fg(int x, int y, const char *s, uint16_t fg)
+void display_draw_string6_fg(int x, int y, const char *s, uint16_t fg)
 {
     if (!s) {
         return;
@@ -533,14 +533,14 @@ static void render_icon(ui_icon_t icon, uint16_t fg, uint16_t bg)
     }
 }
 
-void gfx_draw_icon(int x, int y, ui_icon_t icon, uint16_t fg, uint16_t bg)
+void display_draw_icon(int x, int y, ui_icon_t icon, uint16_t fg, uint16_t bg)
 {
     enum { S = 24 };
     render_icon(icon, fg, bg);
     ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(s_panel, x, y, x + S, y + S, s_icon));
 }
 
-void gfx_draw_icon_scaled(int x, int y, ui_icon_t icon, uint16_t fg, int scale)
+void display_draw_icon_scaled(int x, int y, ui_icon_t icon, uint16_t fg, int scale)
 {
     enum { S = 24 };
     if (scale < 1) {
@@ -579,7 +579,7 @@ void gfx_draw_icon_scaled(int x, int y, ui_icon_t icon, uint16_t fg, int scale)
     }
 }
 
-void gfx_draw_image_rgb565(int x, int y, int w, int h, const uint16_t *img)
+void display_draw_image_rgb565(int x, int y, int w, int h, const uint16_t *img)
 {
     for (int row = 0; row < h; row++) {
         for (int col = 0; col < w; col++) {
@@ -590,7 +590,7 @@ void gfx_draw_image_rgb565(int x, int y, int w, int h, const uint16_t *img)
     }
 }
 
-void gfx_draw_image_key(int x, int y, int w, int h, const uint16_t *img, uint16_t key)
+void display_draw_image_key(int x, int y, int w, int h, const uint16_t *img, uint16_t key)
 {
     for (int row = 0; row < h; row++) {
         int run_x = -1;
