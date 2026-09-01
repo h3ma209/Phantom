@@ -1,14 +1,27 @@
+/**
+ * UI paint layer — splash, main focus carousel, category submenu.
+ *
+ * Layout constants below are intentional “magic”; change them together.
+ * Scroll path restores the focus band from the tiled menu background so we
+ * never full-clear the screen on every detent.
+ */
 #include "menu_screens.h"
 
+#include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_lcd_panel_ops.h"
+#include "esp_heap_caps.h"
+#include "esp_system.h"
+#include "esp_flash.h"
+#include "esp_partition.h"
 #include "display_draw.h"
 #include "lcd_panel.h"
 #include "menu_catalog.h"
 #include "ble_hid_keyboard.h"
 #include "ble_airspam.h"
+#include "ble_clone.h"
 #include "asset_splash.h"
 #include "asset_menu_bg.h"
 #include "asset_submenu_bg.h"
@@ -94,6 +107,7 @@ void menu_screens_splash_glitch_out(void)
     display_draw_fill_screen(COL_BLACK);
 }
 
+/* Tile low-opacity menu BG into a rect — used to erase focus without flicker. */
 static void blit_menu_bg_rect(int x0, int y0, int w, int h)
 {
     esp_lcd_panel_handle_t panel = lcd_panel_handle();
@@ -140,6 +154,7 @@ static void draw_submenu_background(void)
     display_draw_image_rgb565(0, 0, ASSET_SUBMENU_BG_W, ASSET_SUBMENU_BG_H, ASSET_SUBMENU_BG_DATA);
 }
 
+/* Single centered category. full_bg=false → restore band then redraw item. */
 static void draw_focus_item(const menu_item_t *item, bool full_bg)
 {
     if (full_bg) {
@@ -336,6 +351,7 @@ static void draw_sub_footer(const char *footer)
     display_draw_string(8, LCD_H - SUB_FOOTER_H + 4, row, COL_BLACK, COL_WHITE, 1);
 }
 
+/* Strip just above footer: which BT attack is armed (none / Keyboard / AirSpam). */
 static void draw_bt_active_bar(bool hid_active, bool airspam_on)
 {
     esp_lcd_panel_handle_t panel = lcd_panel_handle();
@@ -384,4 +400,246 @@ void menu_screens_draw_category_submenu(int cat_index, int selected, bool full,
         draw_bt_active_bar(hid_active, airspam_on);
     }
     draw_sub_footer(item->footer);
+}
+
+/* --- Resources monitor --- */
+
+#define RES_BAR_X   88
+#define RES_BAR_W   200
+#define RES_BAR_H   10
+#define RES_ROW0    36
+#define RES_ROW_H   40
+
+static void draw_usage_bar(int y, int pct)
+{
+    if (pct < 0) {
+        pct = 0;
+    }
+    if (pct > 100) {
+        pct = 100;
+    }
+    display_draw_rect(RES_BAR_X, y, RES_BAR_W, RES_BAR_H, COL_WHITE);
+    int fill = (RES_BAR_W - 2) * pct / 100;
+    uint16_t col = COL_GREEN;
+    if (pct >= 85) {
+        col = COL_RED;
+    } else if (pct >= 65) {
+        col = COL_PURPLE;
+    }
+    if (fill > 0) {
+        display_draw_fill_rect(RES_BAR_X + 1, y + 1, fill, RES_BAR_H - 2, col);
+    }
+    if (fill < RES_BAR_W - 2) {
+        display_draw_fill_rect(RES_BAR_X + 1 + fill, y + 1, (RES_BAR_W - 2) - fill, RES_BAR_H - 2, COL_BLACK);
+    }
+}
+
+static void draw_res_row(int row, const char *name, int pct, const char *detail)
+{
+    int y = RES_ROW0 + row * RES_ROW_H;
+    display_draw_fill_rect(8, y, LCD_W - 16, RES_ROW_H - 4, COL_BLACK);
+    display_draw_string_fg(8, y, name, COL_WHITE, 1);
+    char pct_s[8];
+    snprintf(pct_s, sizeof(pct_s), "%3d%%", pct);
+    display_draw_string_fg(RES_BAR_X + RES_BAR_W + 6, y, pct_s, COL_WHITE, 1);
+    draw_usage_bar(y + 12, pct);
+    display_draw_string6_fg(8, y + 26, detail, COL_DIM);
+}
+
+/* App image size via partition header walk — no bootloader_support link cost. */
+static size_t app_image_len(const esp_partition_t *part)
+{
+    if (!part) {
+        return 0;
+    }
+    uint8_t magic = 0;
+    if (esp_partition_read(part, 0, &magic, 1) != ESP_OK || magic != 0xE9) {
+        return 0;
+    }
+    uint8_t seg_count = 0;
+    if (esp_partition_read(part, 1, &seg_count, 1) != ESP_OK || seg_count > 16) {
+        return 0;
+    }
+    size_t off = 24; /* esp_image_header_t */
+    size_t total = 24;
+    for (uint8_t i = 0; i < seg_count; i++) {
+        uint32_t len = 0;
+        if (esp_partition_read(part, off + 4, &len, 4) != ESP_OK) {
+            return 0;
+        }
+        if (len > part->size) {
+            return 0;
+        }
+        off += 8 + len;
+        total += 8 + len;
+        /* segment data padded to 16 on flash */
+        size_t pad = (16 - (len & 15)) & 15;
+        off += pad;
+        total += pad;
+    }
+    uint8_t hash_appended = 0;
+    (void)esp_partition_read(part, 23, &hash_appended, 1);
+    if (hash_appended == 1) {
+        total += 32;
+    }
+    return total;
+}
+
+void menu_screens_draw_resources(bool full)
+{
+    if (full) {
+        draw_submenu_background();
+        display_draw_string_fg(8, 8, "resources", COL_DIM, 1);
+        draw_sub_footer("click to go back");
+    }
+
+    size_t heap_free = esp_get_free_heap_size();
+    size_t heap_min = esp_get_minimum_free_heap_size();
+    size_t heap_total = heap_caps_get_total_size(MALLOC_CAP_8BIT);
+    size_t heap_used = (heap_total > heap_free) ? (heap_total - heap_free) : 0;
+    int heap_pct = heap_total ? (int)((heap_used * 100) / heap_total) : 0;
+
+    size_t dram_total = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
+    size_t dram_free = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    size_t dram_used = (dram_total > dram_free) ? (dram_total - dram_free) : 0;
+    int dram_pct = dram_total ? (int)((dram_used * 100) / dram_total) : 0;
+
+    const esp_partition_t *app = esp_partition_find_first(
+        ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+    if (!app) {
+        app = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, NULL);
+    }
+    size_t part_size = app ? app->size : 0;
+    size_t img_len = app_image_len(app);
+    int flash_pct = (part_size && img_len) ? (int)((img_len * 100) / part_size) : 0;
+
+    uint32_t chip_flash = 0;
+    (void)esp_flash_get_size(NULL, &chip_flash);
+
+    UBaseType_t tasks = uxTaskGetNumberOfTasks();
+
+    char detail[44];
+    snprintf(detail, sizeof(detail), "%u/%u KB  minfree %u KB",
+             (unsigned)(heap_used / 1024), (unsigned)(heap_total / 1024),
+             (unsigned)(heap_min / 1024));
+    draw_res_row(0, "HEAP", heap_pct, detail);
+
+    snprintf(detail, sizeof(detail), "%u/%u KB internal",
+             (unsigned)(dram_used / 1024), (unsigned)(dram_total / 1024));
+    draw_res_row(1, "DRAM", dram_pct, detail);
+
+    if (img_len && part_size) {
+        snprintf(detail, sizeof(detail), "app %u/%u KB  chip %u MB",
+                 (unsigned)(img_len / 1024), (unsigned)(part_size / 1024),
+                 (unsigned)(chip_flash / (1024 * 1024)));
+    } else {
+        snprintf(detail, sizeof(detail), "slot %u KB  chip %u MB",
+                 (unsigned)(part_size / 1024),
+                 (unsigned)(chip_flash / (1024 * 1024)));
+    }
+    draw_res_row(2, "FLASH", flash_pct, detail);
+
+    int y = RES_ROW0 + 3 * RES_ROW_H;
+    display_draw_fill_rect(8, y, LCD_W - 16, RES_ROW_H - 4, COL_BLACK);
+    display_draw_string_fg(8, y, "TASKS", COL_WHITE, 1);
+    snprintf(detail, sizeof(detail), "%u FreeRTOS tasks", (unsigned)tasks);
+    display_draw_string_fg(88, y, detail, COL_PURPLE, 1);
+    display_draw_string6_fg(8, y + 14, "live sample — click back", COL_DIM);
+}
+
+/* --- Evil Bluetooth scanner --- */
+
+#define EBT_ROW_H     22
+#define EBT_LIST_Y0   28
+#define EBT_VISIBLE   7
+#define EBT_NAME_MAX  22
+
+void menu_screens_draw_evil_bt(int selected, int scroll_top, bool full)
+{
+    const int n = ble_clone_device_count();
+    const int back_idx = n; /* last row = Back */
+    const int rows = n + 1;
+
+    if (full) {
+        draw_submenu_background();
+        display_draw_string_fg(8, 8, "evil bluetooth", COL_DIM, 1);
+    } else {
+        display_draw_fill_rect(8, 8, LCD_W - 16, 14, COL_BLACK);
+        display_draw_string_fg(8, 8, "evil bluetooth", COL_DIM, 1);
+    }
+
+    const char *st = ble_clone_is_active() ? "CLONING" :
+                     (ble_clone_is_scanning() ? "SCAN" : "IDLE");
+    uint16_t st_col = ble_clone_is_active() ? COL_GREEN :
+                      (ble_clone_is_scanning() ? COL_PURPLE : COL_DIM);
+    display_draw_string_fg(LCD_W - 8 - display_draw_string_width(st, 1), 8, st, st_col, 1);
+
+    display_draw_fill_rect(6, EBT_LIST_Y0, LCD_W - 12, EBT_VISIBLE * EBT_ROW_H, COL_BLACK);
+
+    for (int vis = 0; vis < EBT_VISIBLE; vis++) {
+        int idx = scroll_top + vis;
+        if (idx >= rows) {
+            break;
+        }
+        int y = EBT_LIST_Y0 + vis * EBT_ROW_H;
+        bool sel = (idx == selected);
+
+        if (idx == back_idx) {
+            if (sel) {
+                display_draw_fill_rect(8, y + 1, 60, EBT_ROW_H - 4, COL_WHITE);
+                display_draw_string(12, y + 4, "Back", COL_BLACK, COL_WHITE, 1);
+            } else {
+                display_draw_string_fg(12, y + 4, "Back", COL_DIM, 1);
+            }
+            continue;
+        }
+
+        ble_clone_dev_t dev;
+        if (!ble_clone_device_get(idx, &dev)) {
+            continue;
+        }
+
+        /* Device name as text — never MAC hex */
+        char name[EBT_NAME_MAX + 1];
+        const char *src = (dev.named && dev.name[0]) ? dev.name :
+                          (dev.name[0] ? dev.name : "Unknown");
+        int ni = 0;
+        while (src[ni] && ni < EBT_NAME_MAX) {
+            char c = src[ni];
+            name[ni] = (c >= 32 && c <= 126) ? c : '?';
+            ni++;
+        }
+        name[ni] = 0;
+
+        char info[28];
+        snprintf(info, sizeof(info), "%d dBm", (int)dev.rssi);
+
+        if (sel) {
+            display_draw_fill_rect(8, y + 1, LCD_W - 16, EBT_ROW_H - 4, COL_WHITE);
+            display_draw_string(12, y + 3, name, COL_BLACK, COL_WHITE, 1);
+            display_draw_string6(12, y + 12, info, COL_BLACK, COL_WHITE);
+        } else {
+            display_draw_string_fg(12, y + 3, name, COL_WHITE, 1);
+            display_draw_string6_fg(12, y + 12, info, COL_DIM);
+        }
+    }
+
+    const char *foot;
+    if (ble_clone_is_active()) {
+        foot = "cloning — click Back or device to stop";
+    } else if (selected == back_idx) {
+        foot = "click to leave";
+    } else if (n == 0) {
+        foot = "scanning for named BLE devices…";
+    } else {
+        foot = "click name to clone";
+    }
+    draw_sub_footer(foot);
+
+    if (ble_clone_is_active()) {
+        char bar[40];
+        snprintf(bar, sizeof(bar), "clone: %s", ble_clone_active_name());
+        display_draw_fill_rect(0, LCD_H - SUB_FOOTER_H - 14, LCD_W, 14, COL_BLACK);
+        display_draw_string_fg(8, LCD_H - SUB_FOOTER_H - 11, bar, COL_GREEN, 1);
+    }
 }

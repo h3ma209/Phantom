@@ -1,13 +1,17 @@
+/**
+ * Static menu data only — titles, panel copy, and action tags.
+ * Navigation/dispatch lives in menu_nav; painting in menu_screens.
+ */
 #pragma once
 
 #include <stdint.h>
 
 typedef enum {
     ACT_NONE = 0,
-    ACT_BACK,
-    ACT_HID_KBD,
-    ACT_AIRSPAM,
-    ACT_SOON,
+    ACT_BACK,      /* leave submenu; attacks may keep running */
+    ACT_HID_KBD,   /* BLE HID keyboard advertise / type demo */
+    ACT_AIRSPAM,   /* Apple Continuity spam (toggle) */
+    ACT_SOON,      /* stub — UI only */
 } sub_action_t;
 
 typedef struct {
@@ -35,7 +39,12 @@ typedef struct {
     int count;
 } category_t;
 
+/** Index of "Bluetooth Attacks" in MENU_MAIN / CATEGORIES. */
 #define MENU_MAIN_BT 3
+/** Index of "Evil Bluetooth" — scan/clone screen, not CATEGORIES[]. */
+#define MENU_MAIN_EVIL_BT 5
+/** Index of "Resources" — dedicated live-stats screen, not CATEGORIES[]. */
+#define MENU_MAIN_RESOURCES 6
 
 extern const menu_item_t MENU_MAIN[];
 extern const int MENU_MAIN_COUNT;

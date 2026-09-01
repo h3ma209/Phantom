@@ -1,8 +1,12 @@
+/**
+ * Pixel primitives + tiny fonts/icons. All paths go through panel draw_bitmap.
+ * Keep DMA buffers short-lived on stack/static; panel expects byte-swapped RGB565.
+ */
 #include "display_draw.h"
 #include <string.h>
 #include "esp_log.h"
 
-/* 8x8 font, ASCII 32..127 — bit0 = left column */
+/* ASCII 32..127; bit0 = leftmost column of glyph */
 static const uint8_t FONT8[96][8] = {
     {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}, /* sp */
     {0x18,0x3C,0x3C,0x18,0x18,0x00,0x18,0x00}, /* ! */

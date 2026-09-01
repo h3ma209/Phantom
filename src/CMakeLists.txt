@@ -1,3 +1,4 @@
+# Firmware modules — see ../ARCHITECTURE.md
 idf_component_register(
   SRCS
     "main.c"
@@ -9,6 +10,7 @@ idf_component_register(
     "ui/menu_nav.c"
     "features/ble_hid_keyboard.c"
     "features/ble_airspam.c"
+    "features/ble_clone.c"
     "features/ble_hid_gap.c"
   INCLUDE_DIRS
     "."
@@ -19,5 +21,5 @@ idf_component_register(
     "ui"
     "features"
   REQUIRES esp_hid esp_lcd driver
-  PRIV_REQUIRES nvs_flash bt
+  PRIV_REQUIRES nvs_flash bt spi_flash
 )

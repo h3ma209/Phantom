@@ -1,3 +1,10 @@
+/**
+ * BLE HID keyboard: NimBLE + esp_hidd, advertise as DEDSEC KBD.
+ *
+ * Init order matters: host enable/sync before esp_hidd_dev_init, then force
+ * advertising. Privacy (HS_PVCY) left off in sdkconfig — random RPA breaks
+ * discoverability for this use case.
+ */
 #include "ble_hid_keyboard.h"
 
 #include <string.h>

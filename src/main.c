@@ -1,3 +1,8 @@
+/**
+ * Firmware entry — bring up hardware, show splash, hand off to menu loop.
+ *
+ * No feature logic here; keep boot path readable.
+ */
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

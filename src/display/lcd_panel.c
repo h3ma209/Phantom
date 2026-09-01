@@ -1,3 +1,6 @@
+/**
+ * SPI bus + ILI9341 panel + backlight. Sets landscape orientation once.
+ */
 #include "lcd_panel.h"
 
 #include "driver/gpio.h"

@@ -1,3 +1,7 @@
+/**
+ * Menu content tables. Wire new tools here: add sub_item + action enum,
+ * then handle the action in menu_nav.
+ */
 #include "menu_catalog.h"
 
 #include "asset_icon_recon.h"
@@ -12,6 +16,9 @@ const menu_item_t MENU_MAIN[] = {
     {"Evil Twin", "Rogue AP tools", ASSET_ICON_EVIL_DATA, ASSET_ICON_EVIL_W, ASSET_ICON_EVIL_H},
     {"Bluetooth Attacks", "BLE HID tools", ASSET_ICON_BT_DATA, ASSET_ICON_BT_W, ASSET_ICON_BT_H},
     {"Remote Control", "Remote ops", ASSET_ICON_REMOTE_DATA, ASSET_ICON_REMOTE_W, ASSET_ICON_REMOTE_H},
+    {"Evil Bluetooth", "Scan + clone BLE ads", ASSET_ICON_BT_DATA, ASSET_ICON_BT_W, ASSET_ICON_BT_H},
+    /* Reuse recon icon — monitor / inspect system load */
+    {"Resources", "Heap flash CPU load", ASSET_ICON_RECON_DATA, ASSET_ICON_RECON_W, ASSET_ICON_RECON_H},
 };
 const int MENU_MAIN_COUNT = (int)(sizeof(MENU_MAIN) / sizeof(MENU_MAIN[0]));
 

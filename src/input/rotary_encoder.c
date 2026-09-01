@@ -1,3 +1,9 @@
+/**
+ * Encoder driver: GPIO ISR → Gray-code accumulate → detent events on queue.
+ *
+ * Poll from the UI task only. Do not call gpio from that path for CLK/DT;
+ * ISR already owns the edges.
+ */
 #include "rotary_encoder.h"
 #include "driver/gpio.h"
 #include "esp_err.h"
@@ -6,7 +12,6 @@
 #include "freertos/queue.h"
 #include "freertos/portmacro.h"
 
-/* KY-040: full quadrature decode → one event per detent (4 edges). */
 #define ROTENC_DETENT_STEPS 4
 #define ROTENC_QUEUE_LEN    16
 #define ROTENC_CLICK_MIN_US 25000
@@ -22,7 +27,7 @@ static int64_t s_last_emit_us;
 static int s_sw_down;
 static int64_t s_sw_down_us;
 
-/* Gray-code transition table: index = (prev<<2)|curr → delta */
+/* index = (prev<<2)|curr → +1/−1 step; illegal combos are 0 */
 static const int8_t ROTENC_TRANS[16] = {
     0,  +1, -1,  0,
     -1,  0,  0, +1,

@@ -1,8 +1,13 @@
+/**
+ * Board pin map — ESP32-S NodeMCU ↔ ILI9341 SPI TFT.
+ *
+ * DC on GPIO2 is a boot strap pin; TFT activity during flash often breaks
+ * uploads (hold BOOT / unplug DC). Encoder pins live in rotary_encoder.h.
+ */
 #pragma once
 
 #include "driver/spi_master.h"
 
-/* ILI9341 SPI TFT */
 #define PIN_MOSI 23
 #define PIN_SCLK 18
 #define PIN_CS   15
