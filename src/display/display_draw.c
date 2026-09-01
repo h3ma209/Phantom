@@ -5,6 +5,8 @@
 #include "display_draw.h"
 #include <string.h>
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 /* ASCII 32..127; bit0 = leftmost column of glyph */
 static const uint8_t FONT8[96][8] = {
@@ -591,6 +593,9 @@ void display_draw_image_rgb565(int x, int y, int w, int h, const uint16_t *img)
             s_line[col] = (uint16_t)((p >> 8) | (p << 8));
         }
         ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(s_panel, x, y + row, x + w, y + row + 1, s_line));
+        if ((row & 7) == 7) {
+            vTaskDelay(0);
+        }
     }
 }
 

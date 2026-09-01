@@ -77,6 +77,17 @@ static void IRAM_ATTR enc_isr(void *arg)
     }
 }
 
+void rotary_encoder_flush(void)
+{
+    if (s_q) {
+        rotenc_event_t ev;
+        while (xQueueReceive(s_q, &ev, 0) == pdTRUE) {
+        }
+    }
+    s_sw_down = 0;
+    s_sw_down_us = 0;
+}
+
 void rotary_encoder_init(void)
 {
     gpio_config_t cfg = {

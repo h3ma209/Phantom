@@ -55,6 +55,19 @@ Test tips:
 
 Toggle stops advertising; HID adv resumes if keyboard still armed.
 
+## Evil Twin (WiFi)
+
+Pengz0-style Fake AP on this firmware (ESP-IDF, not Arduino):
+
+1. **Evil Twin → Clone AP** — scan, click SSID to copy the name.
+2. **Captive Portal** — pick HTML template.
+3. **Fake AP** — toggle on. Phone joins open AP, captive page loads. IP `172.217.28.1`.
+4. Toggle Fake AP again to stop.
+
+Lab / networks you own only. Deauth is not implemented.
+
+**Power:** WiFi scan/AP draws a current spike. Weak USB → brownout reset (list flashes, back to main menu). Use a **short data USB cable**, **powered hub**, or **5V on VIN**. Firmware lowers TX power to help; still may need better supply.
+
 ## Upload
 
 TFT **DC is on P2 (GPIO2)** — boot strap pin. Causes `Invalid head of packet` / chip stop if TFT still talking during flash.

@@ -28,3 +28,10 @@ void menu_screens_draw_resources(bool full);
  * @param scroll_top first visible device index
  */
 void menu_screens_draw_evil_bt(int selected, int scroll_top, bool full);
+
+typedef enum {
+    MENU_LIST_WIFI_SCAN = 0,
+    MENU_LIST_WIFI_PORTAL,
+} menu_list_kind_t;
+
+void menu_screens_draw_list(menu_list_kind_t kind, int selected, int scroll, bool full);

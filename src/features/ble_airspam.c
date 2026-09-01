@@ -320,7 +320,7 @@ void ble_airspam_stop(void)
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 #if CONFIG_BT_NIMBLE_ENABLED
-    if (ble_hs_synced()) {
+    if (ble_hid_keyboard_stack_ready() && ble_hs_is_enabled() && ble_hs_synced()) {
         (void)ble_gap_adv_stop();
     }
 #endif

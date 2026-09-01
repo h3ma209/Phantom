@@ -304,12 +304,28 @@ esp_err_t ble_clone_start_scan(void)
 
 void ble_clone_stop_scan(void)
 {
-    if (!ble_hs_synced()) {
-        s_scanning = false;
+    s_scanning = false;
+    if (!ble_hid_keyboard_stack_ready()) {
+        return;
+    }
+    if (!ble_hs_is_enabled() || !ble_hs_synced()) {
         return;
     }
     (void)ble_gap_disc_cancel();
+}
+
+void ble_clone_force_idle(void)
+{
     s_scanning = false;
+    s_cloning = false;
+    s_clone_name[0] = 0;
+    if (!ble_hid_keyboard_stack_ready()) {
+        return;
+    }
+    if (ble_hs_is_enabled() && ble_hs_synced()) {
+        (void)ble_gap_disc_cancel();
+        (void)ble_gap_adv_stop();
+    }
 }
 
 bool ble_clone_is_scanning(void)
@@ -439,7 +455,7 @@ void ble_clone_stop(void)
     }
     s_cloning = false;
     s_clone_name[0] = 0;
-    if (ble_hs_synced()) {
+    if (ble_hid_keyboard_stack_ready() && ble_hs_is_enabled() && ble_hs_synced()) {
         (void)ble_gap_adv_stop();
     }
     ble_hid_keyboard_resume_adv_if_active();
@@ -465,6 +481,7 @@ uint32_t ble_clone_list_gen(void)
 esp_err_t ble_clone_ensure_stack(void) { return ESP_ERR_NOT_SUPPORTED; }
 esp_err_t ble_clone_start_scan(void) { return ESP_ERR_NOT_SUPPORTED; }
 void ble_clone_stop_scan(void) {}
+void ble_clone_force_idle(void) {}
 bool ble_clone_is_scanning(void) { return false; }
 int ble_clone_device_count(void) { return 0; }
 bool ble_clone_device_get(int index, ble_clone_dev_t *out) { (void)index; (void)out; return false; }

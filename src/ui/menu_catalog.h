@@ -11,6 +11,9 @@ typedef enum {
     ACT_BACK,      /* leave submenu; attacks may keep running */
     ACT_HID_KBD,   /* BLE HID keyboard advertise / type demo */
     ACT_AIRSPAM,   /* Apple Continuity spam (toggle) */
+    ACT_FAKE_AP,   /* WiFi soft AP + captive DNS/HTTP */
+    ACT_CLONE_AP,  /* scan list → copy SSID */
+    ACT_PORTAL,    /* pick captive HTML template */
     ACT_SOON,      /* stub — UI only */
 } sub_action_t;
 
@@ -39,6 +42,8 @@ typedef struct {
     int count;
 } category_t;
 
+/** Index of "Evil Twin" in MENU_MAIN / CATEGORIES. */
+#define MENU_MAIN_EVIL 2
 /** Index of "Bluetooth Attacks" in MENU_MAIN / CATEGORIES. */
 #define MENU_MAIN_BT 3
 /** Index of "Evil Bluetooth" — scan/clone screen, not CATEGORIES[]. */
@@ -49,3 +54,4 @@ typedef struct {
 extern const menu_item_t MENU_MAIN[];
 extern const int MENU_MAIN_COUNT;
 extern const category_t CATEGORIES[];
+extern const int MENU_CATEGORY_COUNT;

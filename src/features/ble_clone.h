@@ -38,6 +38,8 @@ bool ble_clone_device_get(int index, ble_clone_dev_t *out);
 /** Stop scan and advertise as device[index]. Click again via stop. */
 esp_err_t ble_clone_start(int index);
 void ble_clone_stop(void);
+/** Clear scan/clone flags without calling NimBLE (WiFi path). */
+void ble_clone_force_idle(void);
 bool ble_clone_is_active(void);
 const char *ble_clone_active_name(void);
 

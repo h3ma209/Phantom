@@ -8,6 +8,12 @@ idf_component_register(
     "ui/menu_catalog.c"
     "ui/menu_screens.c"
     "ui/menu_nav.c"
+    "ui/menu_list.c"
+    "wifi/wifi_manager.c"
+    "wifi/wifi_scan.c"
+    "wifi/wifi_ap.c"
+    "wifi/wifi_dns.c"
+    "wifi/wifi_portals.c"
     "features/ble_hid_keyboard.c"
     "features/ble_airspam.c"
     "features/ble_clone.c"
@@ -20,6 +26,7 @@ idf_component_register(
     "input"
     "ui"
     "features"
+    "wifi"
   REQUIRES esp_hid esp_lcd driver
-  PRIV_REQUIRES nvs_flash bt spi_flash
+  PRIV_REQUIRES nvs_flash bt spi_flash esp_wifi esp_http_server esp_netif lwip esp_event
 )

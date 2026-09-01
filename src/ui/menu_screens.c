@@ -22,6 +22,9 @@
 #include "ble_hid_keyboard.h"
 #include "ble_airspam.h"
 #include "ble_clone.h"
+#include "wifi_manager.h"
+#include "wifi_portals.h"
+#include "menu_list.h"
 #include "asset_splash.h"
 #include "asset_menu_bg.h"
 #include "asset_submenu_bg.h"
@@ -244,6 +247,21 @@ static void draw_sub_panel(const sub_item_t *item, bool hid_busy)
         status_col = ble_airspam_is_active() ? COL_GREEN : COL_DIM;
         conn = ble_airspam_is_active() ? "broadcasting" : "stopped";
         conn_col = ble_airspam_is_active() ? COL_GREEN : COL_DIM;
+    } else if (item->action == ACT_FAKE_AP) {
+        bool on = wifi_manager_ap_running();
+        status = on ? item->status_busy : "idle";
+        status_col = on ? COL_GREEN : COL_DIM;
+        conn = on ? wifi_manager_ip() : "stopped";
+        conn_col = on ? COL_GREEN : COL_DIM;
+    } else if (item->action == ACT_CLONE_AP) {
+        status = "idle";
+        conn = "scan to pick";
+        conn_col = COL_DIM;
+    } else if (item->action == ACT_PORTAL) {
+        status = wifi_portal_name(wifi_manager_portal());
+        status_col = COL_PURPLE;
+        conn = "template";
+        conn_col = COL_DIM;
     } else if (item->action == ACT_SOON) {
         status = item->status_idle;
         status_col = COL_DIM;
@@ -259,7 +277,13 @@ static void draw_sub_panel(const sub_item_t *item, bool hid_busy)
     int ty = SUB_PANEL_Y + 12;
     int row = 0;
 
-    draw_panel_field(tx, ty + row * 36, "name", item->name_val, COL_PURPLE);
+    const char *name = item->name_val;
+    if (item->action == ACT_FAKE_AP || item->action == ACT_CLONE_AP) {
+        name = wifi_manager_ssid();
+    } else if (item->action == ACT_PORTAL) {
+        name = wifi_portal_name(wifi_manager_portal());
+    }
+    draw_panel_field(tx, ty + row * 36, "name", name, COL_PURPLE);
     row++;
     draw_panel_field(tx, ty + row * 36, "status", status, status_col);
     row++;
@@ -642,4 +666,75 @@ void menu_screens_draw_evil_bt(int selected, int scroll_top, bool full)
         display_draw_fill_rect(0, LCD_H - SUB_FOOTER_H - 14, LCD_W, 14, COL_BLACK);
         display_draw_string_fg(8, LCD_H - SUB_FOOTER_H - 11, bar, COL_GREEN, 1);
     }
+}
+
+static void wifi_scanning_row(int index, char *title, size_t title_n, char *sub, size_t sub_n, void *ctx)
+{
+    (void)ctx;
+    if (index == 0) {
+        strncpy(title, "Scanning...", title_n - 1);
+        title[title_n - 1] = 0;
+        snprintf(sub, sub_n, "please wait");
+    } else {
+        title[0] = 0;
+        sub[0] = 0;
+    }
+}
+
+static void wifi_scan_row(int index, char *title, size_t title_n, char *sub, size_t sub_n, void *ctx)
+{
+    (void)ctx;
+    wifi_ap_info_t ap;
+    if (!wifi_manager_ap_get(index, &ap)) {
+        title[0] = 0;
+        sub[0] = 0;
+        return;
+    }
+    strncpy(title, ap.ssid, title_n - 1);
+    title[title_n - 1] = 0;
+    snprintf(sub, sub_n, "%d dBm  ch%u", (int)ap.rssi, (unsigned)ap.channel);
+}
+
+static void wifi_portal_row(int index, char *title, size_t title_n, char *sub, size_t sub_n, void *ctx)
+{
+    (void)ctx;
+    const char *n = wifi_portal_name(index);
+    if (index == wifi_manager_portal()) {
+        snprintf(title, title_n, "* %s", n);
+    } else {
+        snprintf(title, title_n, "  %s", n);
+    }
+    sub[0] = 0;
+    (void)sub_n;
+}
+
+void menu_screens_draw_list(menu_list_kind_t kind, int selected, int scroll, bool full)
+{
+    if (kind == MENU_LIST_WIFI_PORTAL) {
+        const int count = WIFI_PORTAL_COUNT + 1;
+        menu_list_draw("captive portal", wifi_portal_name(wifi_manager_portal()), COL_PURPLE,
+                       count, selected, scroll, wifi_portal_row, NULL, full,
+                       selected == WIFI_PORTAL_COUNT ? "click to leave" : "click to select template");
+        return;
+    }
+
+    if (wifi_manager_scan_busy()) {
+        menu_list_draw("clone ap", "SCAN", COL_PURPLE, 2, selected, scroll,
+                       wifi_scanning_row, NULL, full, "scanning nearby APs…");
+        return;
+    }
+
+    int n = wifi_manager_ap_count();
+    int count = n + 1;
+    const char *st = (n == 0) ? "SCAN" : "LIST";
+    uint16_t sc = (n == 0) ? COL_PURPLE : COL_GREEN;
+    const char *foot;
+    if (selected == n) {
+        foot = "click to leave";
+    } else if (n == 0) {
+        foot = "no APs — back and retry";
+    } else {
+        foot = "click SSID to clone name";
+    }
+    menu_list_draw("clone ap", st, sc, count, selected, scroll, wifi_scan_row, NULL, full, foot);
 }

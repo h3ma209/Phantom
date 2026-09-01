@@ -2,6 +2,10 @@
 
 ESP32-S NodeMCU + ILI9341 TFT (320×240 landscape). PlatformIO / ESP-IDF.
 
+WiFi behavior matches **pengz0** (scan → copy SSID → Fake AP + DNS + captive HTML). Code layout does **not** copy pengz0’s Arduino menus.
+
+Lab / authorized networks only.
+
 ## Boot path
 
 `app_main` → LCD + encoder → splash → glitch-out → `menu_nav_run()` (blocks forever).
@@ -13,31 +17,38 @@ ESP32-S NodeMCU + ILI9341 TFT (320×240 landscape). PlatformIO / ESP-IDF.
 | `board/` | Pin map (`board_pins.h`) |
 | `display/` | Panel bring-up, blit helpers, RGB565 assets |
 | `input/` | Rotary encoder ISR → queue |
-| `ui/` | Catalog data, screen paint, nav state machine |
-| `features/` | BLE HID keyboard + Apple Continuity “AirSpam” |
+| `ui/` | Catalog, screens, nav, shared `menu_list` |
+| `wifi/` | **wifi_manager** owns radio; scan / AP / DNS / portals are thin |
+| `features/` | BLE HID, AirSpam, BLE clone |
+
+## WiFi manager
+
+UI never calls `esp_wifi_*`. Modes: `WIFI_MGR_OFF` / `WIFI_MGR_SCAN` / `WIFI_MGR_AP` (`wifi_mgr_mode_t` — IDF already owns `wifi_mode_t`). Switching stops the previous mode.
+
+- **Scan** — STA scan into a fixed cache (SSID, RSSI, channel).
+- **Clone SSID** — copy scanned name into Fake AP SSID (not BSSID/channel).
+- **Fake AP** — open soft AP at `172.217.28.1`, UDP DNS hijack (`*` → AP), HTTP portal on captive probe paths.
+- **Portals** — four HTML templates (IQ / Komar / MyKomar / Komar Cap).
+- **Tick** — `wifi_manager_tick()` in the nav loop while AP is up (DNS).
+
+BLE is paused when WiFi scan or AP starts.
 
 ## UI model
 
-- **Main**: one centered category (icon + title). Scroll patches focus band only — avoids full-screen flicker.
-- **Submenu**: left list + cursor, right status panel, `active:` strip above footer.
-- **Catalog** (`menu_catalog.*`): static labels/actions. Nav dispatches `sub_action_t`; screens only paint.
+- **Main**: centered category carousel.
+- **Submenu**: left list + right panel. Evil Twin: Fake AP toggle, Clone AP list, Captive Portal list.
+- **Shared list** (`menu_list`): AP picker and portal picker (Back last row).
 
-Encoder: turn = move selection; click = activate. **Back** leaves submenu; HID/AirSpam can keep running.
+Encoder: turn = move; click = activate. Fake AP click toggles on/off.
 
 ## BLE sharing
 
-One NimBLE host. HID owns stack bring-up; AirSpam reuses it.
-
-- HID: connectable adv as `DEDSEC KBD` (`esp_hid` + report map).
-- AirSpam: non-connectable Apple manufacturer payloads. **Not** in scan lists — Continuity popups on iOS only.
-- Mutual exclusion: starting AirSpam pauses HID adv; stop resumes if HID still active.
-
-Never call `ble_gap_adv_stop()` before host sync — crash/reboot.
+One NimBLE host. HID / AirSpam / clone mutually pause advertising. Do not `ble_gap_adv_stop()` before host sync.
 
 ## Hardware gotchas
 
-- TFT **DC on GPIO2** (strap): flaky upload. See `WIRING.md`.
-- Flash tight (~4MB `SINGLE_APP_LARGE`); assets eat space.
+- TFT **DC on GPIO2** — flaky upload. See `WIRING.md`.
+- App partition ~3MB (`partitions.csv`).
 
 ## Assets
 

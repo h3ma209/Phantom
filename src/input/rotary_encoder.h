@@ -20,4 +20,6 @@ typedef enum {
 } rotenc_event_t;
 
 void rotary_encoder_init(void);
+/** Drop queued detents/clicks after a screen change. */
+void rotary_encoder_flush(void);
 rotenc_event_t rotary_encoder_poll(void);

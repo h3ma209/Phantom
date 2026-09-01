@@ -17,7 +17,6 @@ const menu_item_t MENU_MAIN[] = {
     {"Bluetooth Attacks", "BLE HID tools", ASSET_ICON_BT_DATA, ASSET_ICON_BT_W, ASSET_ICON_BT_H},
     {"Remote Control", "Remote ops", ASSET_ICON_REMOTE_DATA, ASSET_ICON_REMOTE_W, ASSET_ICON_REMOTE_H},
     {"Evil Bluetooth", "Scan + clone BLE ads", ASSET_ICON_BT_DATA, ASSET_ICON_BT_W, ASSET_ICON_BT_H},
-    /* Reuse recon icon — monitor / inspect system load */
     {"Resources", "Heap flash CPU load", ASSET_ICON_RECON_DATA, ASSET_ICON_RECON_W, ASSET_ICON_RECON_H},
 };
 const int MENU_MAIN_COUNT = (int)(sizeof(MENU_MAIN) / sizeof(MENU_MAIN[0]));
@@ -35,9 +34,46 @@ static const sub_item_t SUB_DEAUTH[] = {
 };
 
 static const sub_item_t SUB_EVIL[] = {
-    {"Clone AP", "Stand up a twin of target AP", "twin", "idle", "spoofing", "down", "coming soon", ACT_SOON},
-    {"Captive Portal", "Phish via captive portal", "portal", "idle", "live", "down", "coming soon", ACT_SOON},
-    {"Back", "Return to main menu", "—", "—", "—", "—", "click to go back", ACT_BACK},
+    {
+        .label = "Fake AP",
+        .footer = "Open rogue AP + captive DNS",
+        .name_val = "FakeAP",
+        .status_idle = "idle",
+        .status_busy = "ON",
+        .conn_val = "down",
+        .hint = "press to toggle",
+        .action = ACT_FAKE_AP,
+    },
+    {
+        .label = "Clone AP",
+        .footer = "Scan and copy a nearby SSID",
+        .name_val = "target",
+        .status_idle = "idle",
+        .status_busy = "cloned",
+        .conn_val = "n/a",
+        .hint = "click to scan",
+        .action = ACT_CLONE_AP,
+    },
+    {
+        .label = "Captive Portal",
+        .footer = "HTML template for Fake AP",
+        .name_val = "portal",
+        .status_idle = "idle",
+        .status_busy = "selected",
+        .conn_val = "n/a",
+        .hint = "click to pick page",
+        .action = ACT_PORTAL,
+    },
+    {
+        .label = "Back",
+        .footer = "Return to main menu",
+        .name_val = "—",
+        .status_idle = "—",
+        .status_busy = "—",
+        .conn_val = "—",
+        .hint = "click to go back",
+        .action = ACT_BACK,
+    },
 };
 
 static const sub_item_t SUB_BT[] = {
@@ -61,3 +97,4 @@ const category_t CATEGORIES[] = {
     {"bluetooth attacks", SUB_BT, (int)(sizeof(SUB_BT) / sizeof(SUB_BT[0]))},
     {"remote control", SUB_REMOTE, (int)(sizeof(SUB_REMOTE) / sizeof(SUB_REMOTE[0]))},
 };
+const int MENU_CATEGORY_COUNT = (int)(sizeof(CATEGORIES) / sizeof(CATEGORIES[0]));
