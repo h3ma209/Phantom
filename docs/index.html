@@ -129,7 +129,7 @@
       <header class="section__head">
         <p class="kicker">IN PLAIN ENGLISH</p>
         <h2>WHAT CAN IT DO?</h2>
-        <p>Working demos today, plus room to grow. Full menu names and wiring live on the About page.</p>
+        <p>Working demos today, plus room to grow. Tap a category on the knob menu — submenus look like this on the TFT.</p>
       </header>
       <div class="grid grid--landing">
         <article class="card card--plain">
@@ -156,6 +156,27 @@
           <p>Network scanning, remote control stubs, and other menu slots are placeholders for future work.</p>
           <span class="tag tag--soon">SOON</span>
         </article>
+      </div>
+
+      <div class="submenus submenus--landing">
+        <figure>
+          <button type="button" class="shot" data-full="assets/submenu_wifi.jpg">
+            <img src="assets/submenu_wifi.jpg" alt="WiFi tools submenu on the handheld screen">
+          </button>
+          <figcaption>WI-FI TOOLS</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="assets/submenu_ble.jpg">
+            <img src="assets/submenu_ble.jpg" alt="Bluetooth demos submenu on the handheld screen">
+          </button>
+          <figcaption>BLUETOOTH</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="assets/submenu_resources.jpg">
+            <img src="assets/submenu_resources.jpg" alt="System stats submenu on the handheld screen">
+          </button>
+          <figcaption>SYSTEM STATS</figcaption>
+        </figure>
       </div>
     </section>
 
@@ -199,6 +220,11 @@
     <img src="assets/cursor.png" width="24" height="28" alt="">
     <p>PHANTOM · NON-COMMERCIAL EDUCATIONAL USE · <a href="about.html">ABOUT</a> · <a href="https://github.com/h3ma209/Phantom">SOURCE</a></p>
   </footer>
+
+  <dialog id="lightbox" class="lightbox">
+    <img id="lightbox-img" alt="">
+    <form method="dialog"><button type="submit" class="btn">CLOSE</button></form>
+  </dialog>
 
   <script src="js/app.js"></script>
 </body>

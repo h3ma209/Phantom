@@ -672,6 +672,19 @@ th {
 
 .build-photo { margin-bottom: 14px; }
 
+.submenus {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 28px;
+}
+.submenus--landing { margin-top: 8px; }
+.submenus .shot img {
+  aspect-ratio: 320 / 240;
+  object-fit: cover;
+  background: #000;
+}
+
 .shots {
   display: grid;
   grid-template-columns: 0.7fr 1.3fr;
@@ -819,7 +832,7 @@ figcaption {
 
 @media (max-width: 860px) {
   .nav { display: none; }
-  .hero, .device, .tables, .shots, .parts, .gotchas, .layout, .diagrams, .story, .cost {
+  .hero, .device, .tables, .shots, .parts, .gotchas, .layout, .diagrams, .story, .cost, .submenus {
     grid-template-columns: 1fr;
   }
   .stats { flex-wrap: wrap; }
