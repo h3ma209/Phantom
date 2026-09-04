@@ -376,6 +376,8 @@ th {
   background: #0d0d0d;
 }
 
+.build-photo { margin-bottom: 14px; }
+
 .shots {
   display: grid;
   grid-template-columns: 0.7fr 1.3fr;

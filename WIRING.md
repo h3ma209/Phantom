@@ -6,6 +6,8 @@ Framework: **ESP-IDF** via PlatformIO (`framework = espidf`).
 Pins: `src/board/board_pins.h` (TFT), `src/input/rotary_encoder.h` (encoder).
 Software map: `ARCHITECTURE.md`.
 
+![Phantom breadboard prototype](docs/assets/prototype.jpg)
+
 ## TFT
 
 | TFT pin     | Board label | GPIO | Notes |

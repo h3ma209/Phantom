@@ -24,6 +24,8 @@ If you do not accept these terms, **do not use this software.**
 
 ## Hardware
 
+![Phantom breadboard prototype — Evil Twin menu on ILI9341 TFT](docs/assets/prototype.jpg)
+
 | Part | Notes |
 |------|--------|
 | ESP32-S NodeMCU v1.1 | USB power; BLE + WiFi on 2.4 GHz |
