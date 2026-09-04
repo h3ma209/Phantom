@@ -20,12 +20,14 @@
 #include "lcd_panel.h"
 #include "menu_catalog.h"
 #include "ble_hid_keyboard.h"
-#include "ble_airspam.h"
+#include "ble_apple_spam.h"
 #include "ble_clone.h"
 #include "wifi_manager.h"
 #include "wifi_portals.h"
+#include "wifi_portal_log.h"
 #include "menu_list.h"
-#include "asset_splash.h"
+#include "asset_splash_zlib.h"
+#include "asset_zlib.h"
 #include "asset_menu_bg.h"
 #include "asset_submenu_bg.h"
 #include "asset_cursor.h"
@@ -61,13 +63,47 @@ static uint16_t prng_next(uint16_t *state)
     return *state;
 }
 
+static uint16_t *s_splash_px;
+
+static bool splash_pixels_load(void)
+{
+    if (s_splash_px) {
+        return true;
+    }
+    s_splash_px = (uint16_t *)heap_caps_malloc(ASSET_SPLASH_RAW_LEN, MALLOC_CAP_8BIT);
+    if (!s_splash_px) {
+        return false;
+    }
+    if (!asset_zlib_inflate_rgb565(ASSET_SPLASH_ZLIB_DATA, ASSET_SPLASH_ZLIB_LEN,
+                                    (uint8_t *)s_splash_px, ASSET_SPLASH_RAW_LEN)) {
+        heap_caps_free(s_splash_px);
+        s_splash_px = NULL;
+        return false;
+    }
+    return true;
+}
+
+static void splash_pixels_free(void)
+{
+    if (s_splash_px) {
+        heap_caps_free(s_splash_px);
+        s_splash_px = NULL;
+    }
+}
+
 void menu_screens_draw_splash(void)
 {
-    display_draw_image_rgb565(0, 0, ASSET_SPLASH_W, ASSET_SPLASH_H, ASSET_SPLASH_DATA);
+    if (splash_pixels_load()) {
+        display_draw_image_rgb565(0, 0, ASSET_SPLASH_W, ASSET_SPLASH_H, s_splash_px);
+    }
 }
 
 void menu_screens_splash_glitch_out(void)
 {
+    if (!splash_pixels_load()) {
+        return;
+    }
+
     esp_lcd_panel_handle_t panel = lcd_panel_handle();
     uint16_t rng = 0xA5F1;
     uint16_t line[LCD_W];
@@ -81,7 +117,7 @@ void menu_screens_splash_glitch_out(void)
             }
             int shift = (int)(prng_next(&rng) % 41) - 20;
             for (int y = y0; y < y0 + bh; y++) {
-                const uint16_t *src = &ASSET_SPLASH_DATA[y * ASSET_SPLASH_W];
+                const uint16_t *src = &s_splash_px[y * ASSET_SPLASH_W];
                 for (int x = 0; x < LCD_W; x++) {
                     int sx = x - shift;
                     if (sx < 0 || sx >= LCD_W || (prng_next(&rng) & 0x3F) == 0) {
@@ -108,9 +144,8 @@ void menu_screens_splash_glitch_out(void)
     }
 
     display_draw_fill_screen(COL_BLACK);
+    splash_pixels_free();
 }
-
-/* Tile low-opacity menu BG into a rect — used to erase focus without flicker. */
 static void blit_menu_bg_rect(int x0, int y0, int w, int h)
 {
     esp_lcd_panel_handle_t panel = lcd_panel_handle();
@@ -195,10 +230,10 @@ void menu_screens_draw_main_menu(int selected, bool full_bg)
     draw_focus_item(&MENU_MAIN[selected], full_bg);
 }
 
-static const char *bt_active_label(bool hid_active, bool airspam_on)
+static const char *bt_active_label(bool hid_active, bool apple_spam_on)
 {
-    if (airspam_on) {
-        return "AirSpam";
+    if (apple_spam_on) {
+        return "Apple Spam";
     }
     if (hid_active) {
         return "Keyboard";
@@ -242,11 +277,11 @@ static void draw_sub_panel(const sub_item_t *item, bool hid_busy)
             conn = "not connected";
             conn_col = COL_RED;
         }
-    } else if (item->action == ACT_AIRSPAM) {
-        status = ble_airspam_is_active() ? item->status_busy : "idle";
-        status_col = ble_airspam_is_active() ? COL_GREEN : COL_DIM;
-        conn = ble_airspam_is_active() ? "broadcasting" : "stopped";
-        conn_col = ble_airspam_is_active() ? COL_GREEN : COL_DIM;
+    } else if (item->action == ACT_APPLE_SPAM) {
+        status = ble_apple_spam_is_active() ? item->status_busy : "idle";
+        status_col = ble_apple_spam_is_active() ? COL_GREEN : COL_DIM;
+        conn = ble_apple_spam_is_active() ? "broadcasting" : "stopped";
+        conn_col = ble_apple_spam_is_active() ? COL_GREEN : COL_DIM;
     } else if (item->action == ACT_FAKE_AP) {
         bool on = wifi_manager_ap_running();
         status = on ? item->status_busy : "idle";
@@ -254,14 +289,31 @@ static void draw_sub_panel(const sub_item_t *item, bool hid_busy)
         conn = on ? wifi_manager_ip() : "stopped";
         conn_col = on ? COL_GREEN : COL_DIM;
     } else if (item->action == ACT_CLONE_AP) {
-        status = "idle";
-        conn = "scan to pick";
-        conn_col = COL_DIM;
+        bool cloned = wifi_manager_ssid_cloned();
+        status = cloned ? item->status_busy : item->status_idle;
+        status_col = cloned ? COL_GREEN : COL_DIM;
+        conn = cloned ? "SSID saved" : "scan to pick";
+        conn_col = cloned ? COL_GREEN : COL_DIM;
     } else if (item->action == ACT_PORTAL) {
         status = wifi_portal_name(wifi_manager_portal());
         status_col = COL_PURPLE;
         conn = "template";
         conn_col = COL_DIM;
+    } else if (item->action == ACT_PORTAL_LOG) {
+        int n = wifi_portal_log_count();
+        if (n > 0) {
+            static char log_st[12];
+            snprintf(log_st, sizeof(log_st), "%d", n);
+            status = log_st;
+            status_col = COL_GREEN;
+            conn = "stored";
+            conn_col = COL_GREEN;
+        } else {
+            status = item->status_idle;
+            status_col = COL_DIM;
+            conn = "none yet";
+            conn_col = COL_DIM;
+        }
     } else if (item->action == ACT_SOON) {
         status = item->status_idle;
         status_col = COL_DIM;
@@ -375,8 +427,8 @@ static void draw_sub_footer(const char *footer)
     display_draw_string(8, LCD_H - SUB_FOOTER_H + 4, row, COL_BLACK, COL_WHITE, 1);
 }
 
-/* Strip just above footer: which BT attack is armed (none / Keyboard / AirSpam). */
-static void draw_bt_active_bar(bool hid_active, bool airspam_on)
+/* Strip just above footer: which BT attack is armed (none / Keyboard / Apple Spam). */
+static void draw_bt_active_bar(bool hid_active, bool apple_spam_on)
 {
     esp_lcd_panel_handle_t panel = lcd_panel_handle();
     const int y = LCD_H - SUB_FOOTER_H - SUB_ACTIVE_H;
@@ -394,13 +446,13 @@ static void draw_bt_active_bar(bool hid_active, bool airspam_on)
     }
 
     display_draw_string_fg(8, y + 3, "active:", COL_WHITE, 1);
-    const char *active = bt_active_label(hid_active, airspam_on);
+    const char *active = bt_active_label(hid_active, apple_spam_on);
     uint16_t ac = (active[0] == 'n') ? COL_DIM : COL_GREEN;
     display_draw_string_fg(8 + display_draw_string_width("active:", 1) + 4, y + 3, active, ac, 1);
 }
 
 void menu_screens_draw_category_submenu(int cat_index, int selected, bool full,
-                                        bool hid_active, bool airspam_on)
+                                        bool hid_active, bool apple_spam_on)
 {
     const category_t *cat = &CATEGORIES[cat_index];
     const bool is_bt = (cat_index == MENU_MAIN_BT);
@@ -421,7 +473,7 @@ void menu_screens_draw_category_submenu(int cat_index, int selected, bool full,
     bool hid_busy = (item->action == ACT_HID_KBD) && hid_active;
     draw_sub_panel(item, hid_busy);
     if (is_bt) {
-        draw_bt_active_bar(hid_active, airspam_on);
+        draw_bt_active_bar(hid_active, apple_spam_on);
     }
     draw_sub_footer(item->footer);
 }
@@ -708,6 +760,92 @@ static void wifi_portal_row(int index, char *title, size_t title_n, char *sub, s
     (void)sub_n;
 }
 
+void menu_screens_portal_log_adjust_scroll(int sel, int count, int *scroll)
+{
+    if (!scroll || count < 1) {
+        if (scroll) {
+            *scroll = 0;
+        }
+        return;
+    }
+    if (sel < *scroll) {
+        *scroll = sel;
+    }
+    if (sel >= *scroll + MENU_PORTAL_LOG_VISIBLE) {
+        *scroll = sel - MENU_PORTAL_LOG_VISIBLE + 1;
+    }
+    if (*scroll < 0) {
+        *scroll = 0;
+    }
+}
+
+void menu_screens_draw_portal_log(int selected, int scroll, bool full)
+{
+    const int n = wifi_portal_log_count();
+    const int count = (n > 0 ? n : 1) + 1;
+    const int back_idx = count - 1;
+
+    if (full) {
+        display_draw_image_rgb565(0, 0, ASSET_SUBMENU_BG_W, ASSET_SUBMENU_BG_H, ASSET_SUBMENU_BG_DATA);
+    } else {
+        display_draw_fill_rect(8, 8, LCD_W - 16, 14, COL_BLACK);
+    }
+
+    display_draw_string_fg(8, 8, "portal log", COL_DIM, 1);
+    char st[12];
+    if (n > 0) {
+        snprintf(st, sizeof(st), "%d", n);
+        int sw = display_draw_string_width(st, 1);
+        display_draw_string_fg(LCD_W - 8 - sw, 8, st, COL_GREEN, 1);
+    } else {
+        int sw = display_draw_string_width("0", 1);
+        display_draw_string_fg(LCD_W - 8 - sw, 8, "0", COL_DIM, 1);
+    }
+
+    const int list_y0 = 28;
+    display_draw_fill_rect(6, list_y0, LCD_W - 12,
+                           MENU_PORTAL_LOG_VISIBLE * MENU_PORTAL_LOG_ROW_H, COL_BLACK);
+
+    for (int vis = 0; vis < MENU_PORTAL_LOG_VISIBLE; vis++) {
+        int idx = scroll + vis;
+        if (idx >= count) {
+            break;
+        }
+        int y = list_y0 + vis * MENU_PORTAL_LOG_ROW_H;
+        bool sel = (idx == selected);
+
+        if (idx == back_idx) {
+            if (sel) {
+                display_draw_fill_rect(8, y + 4, 72, MENU_PORTAL_LOG_ROW_H - 8, COL_WHITE);
+                display_draw_string(12, y + 10, "Back", COL_BLACK, COL_WHITE, 2);
+            } else {
+                display_draw_string_fg(12, y + 10, "Back", COL_DIM, 2);
+            }
+            continue;
+        }
+
+        char line[WIFI_PORTAL_LOG_PW_LEN + 16];
+        char pw[WIFI_PORTAL_LOG_PW_LEN];
+        if (!wifi_portal_log_get(idx, pw, sizeof(pw))) {
+            strncpy(line, "(no captures)", sizeof(line) - 1);
+            line[sizeof(line) - 1] = 0;
+        } else {
+            snprintf(line, sizeof(line), "#%d  %s", idx + 1, pw);
+        }
+
+        if (sel) {
+            display_draw_fill_rect(8, y + 2, LCD_W - 16, MENU_PORTAL_LOG_ROW_H - 4, COL_WHITE);
+            display_draw_string(12, y + 8, line, COL_BLACK, COL_WHITE, 2);
+        } else {
+            display_draw_string_fg(12, y + 8, line, COL_WHITE, 2);
+        }
+    }
+
+    display_draw_fill_rect(0, LCD_H - 16, LCD_W, 16, COL_WHITE);
+    const char *foot = (n > 0) ? "newest at top" : "no passwords captured yet";
+    display_draw_string(8, LCD_H - 12, foot, COL_BLACK, COL_WHITE, 1);
+}
+
 void menu_screens_draw_list(menu_list_kind_t kind, int selected, int scroll, bool full)
 {
     if (kind == MENU_LIST_WIFI_PORTAL) {
@@ -715,6 +853,11 @@ void menu_screens_draw_list(menu_list_kind_t kind, int selected, int scroll, boo
         menu_list_draw("captive portal", wifi_portal_name(wifi_manager_portal()), COL_PURPLE,
                        count, selected, scroll, wifi_portal_row, NULL, full,
                        selected == WIFI_PORTAL_COUNT ? "click to leave" : "click to select template");
+        return;
+    }
+
+    if (kind == MENU_LIST_WIFI_PORTAL_LOG) {
+        menu_screens_draw_portal_log(selected, scroll, full);
         return;
     }
 
@@ -726,8 +869,18 @@ void menu_screens_draw_list(menu_list_kind_t kind, int selected, int scroll, boo
 
     int n = wifi_manager_ap_count();
     int count = n + 1;
-    const char *st = (n == 0) ? "SCAN" : "LIST";
-    uint16_t sc = (n == 0) ? COL_PURPLE : COL_GREEN;
+    const char *st;
+    uint16_t sc;
+    if (wifi_manager_ssid_cloned()) {
+        st = "cloned";
+        sc = COL_GREEN;
+    } else if (n == 0) {
+        st = "SCAN";
+        sc = COL_PURPLE;
+    } else {
+        st = "LIST";
+        sc = COL_GREEN;
+    }
     const char *foot;
     if (selected == n) {
         foot = "click to leave";

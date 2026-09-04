@@ -65,6 +65,16 @@ static const sub_item_t SUB_EVIL[] = {
         .action = ACT_PORTAL,
     },
     {
+        .label = "Portal Log",
+        .footer = "Passwords entered on captive page",
+        .name_val = "captures",
+        .status_idle = "empty",
+        .status_busy = "logged",
+        .conn_val = "n/a",
+        .hint = "click to view log",
+        .action = ACT_PORTAL_LOG,
+    },
+    {
         .label = "Back",
         .footer = "Return to main menu",
         .name_val = "—",
@@ -79,8 +89,8 @@ static const sub_item_t SUB_EVIL[] = {
 static const sub_item_t SUB_BT[] = {
     {"Keyboard", "Act as BT keyboard — go rogue", "Lenovo Keyboard", "idle", "Working",
      "not connected", "press again to stop", ACT_HID_KBD},
-    {"AirSpam", "Spam Apple BLE popups", "AirPods", "idle", "spamming", "nearby",
-     "press again to stop", ACT_AIRSPAM},
+    {"Apple Spam", "Flood Apple BLE popups", "AirPods/TV/etc", "idle", "spamming", "nearby",
+     "press again to stop", ACT_APPLE_SPAM},
     {"Jammer", "BLE jammer — soon", "—", "soon", "soon", "n/a", "not ready", ACT_SOON},
     {"Back", "Return to main menu", "—", "—", "—", "—", "click to go back", ACT_BACK},
 };

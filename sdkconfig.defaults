@@ -19,6 +19,7 @@ CONFIG_LOG_DEFAULT_LEVEL_INFO=y
 # Soft AP + captive HTTP (wifi_manager)
 CONFIG_ESP_WIFI_SOFTAP_SUPPORT=y
 CONFIG_LWIP_DHCPS=y
+CONFIG_LWIP_MAX_SOCKETS=16
 
 # TFT + WiFi on USB: PHY start can dip below BOD threshold (log: "Brownout detector was triggered")
 CONFIG_ESP_BROWNOUT_DET=n

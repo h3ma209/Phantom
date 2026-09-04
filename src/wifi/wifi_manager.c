@@ -18,6 +18,7 @@ static wifi_mgr_mode_t s_mode = WIFI_MGR_OFF;
 static bool s_inited;
 static bool s_scan_done;
 static char s_ssid[WIFI_SSID_MAX] = "FakeAP";
+static bool s_ssid_cloned;
 static int s_portal;
 static esp_netif_t *s_sta_netif;
 
@@ -209,6 +210,7 @@ esp_err_t wifi_manager_clone_ssid(int scan_index)
     }
     strncpy(s_ssid, ap.ssid, sizeof(s_ssid) - 1);
     s_ssid[sizeof(s_ssid) - 1] = 0;
+    s_ssid_cloned = true;
     ESP_LOGI(TAG, "clone SSID -> %s", s_ssid);
     return ESP_OK;
 }
@@ -232,6 +234,11 @@ int wifi_manager_portal(void)
 const char *wifi_manager_ssid(void)
 {
     return s_ssid;
+}
+
+bool wifi_manager_ssid_cloned(void)
+{
+    return s_ssid_cloned;
 }
 
 bool wifi_manager_ap_running(void)

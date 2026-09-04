@@ -10,10 +10,11 @@ typedef enum {
     ACT_NONE = 0,
     ACT_BACK,      /* leave submenu; attacks may keep running */
     ACT_HID_KBD,   /* BLE HID keyboard advertise / type demo */
-    ACT_AIRSPAM,   /* Apple Continuity spam (toggle) */
+    ACT_APPLE_SPAM, /* Apple Continuity popup flood (toggle) */
     ACT_FAKE_AP,   /* WiFi soft AP + captive DNS/HTTP */
     ACT_CLONE_AP,  /* scan list → copy SSID */
     ACT_PORTAL,    /* pick captive HTML template */
+    ACT_PORTAL_LOG, /* view captured portal passwords */
     ACT_SOON,      /* stub — UI only */
 } sub_action_t;
 

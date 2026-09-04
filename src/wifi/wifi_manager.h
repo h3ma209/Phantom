@@ -38,6 +38,7 @@ void wifi_manager_set_portal(int index);
 int wifi_manager_portal(void);
 
 const char *wifi_manager_ssid(void);
+bool wifi_manager_ssid_cloned(void);
 bool wifi_manager_ap_running(void);
 const char *wifi_manager_ip(void);
 

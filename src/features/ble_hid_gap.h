@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
  * Vendored Espressif HID GAP helper (NimBLE path). Prefer calling through
- * ble_hid_keyboard / ble_airspam rather than touching gap from UI code.
+ * ble_hid_keyboard / ble_apple_spam rather than touching gap from UI code.
  */
 
 #ifndef _ESP_HID_GAP_H_

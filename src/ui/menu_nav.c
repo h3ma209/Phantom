@@ -1,7 +1,7 @@
 /**
  * Menu state machine + feature arming.
  *
- * HID/AirSpam stay armed across Back. WiFi goes through wifi_manager only.
+ * HID/Apple Spam stay armed across Back. WiFi goes through wifi_manager only.
  */
 #include "menu_nav.h"
 
@@ -16,10 +16,11 @@
 #include "menu_screens.h"
 #include "menu_list.h"
 #include "ble_hid_keyboard.h"
-#include "ble_airspam.h"
+#include "ble_apple_spam.h"
 #include "ble_clone.h"
 #include "wifi_manager.h"
 #include "wifi_portals.h"
+#include "wifi_portal_log.h"
 
 static const char *TAG = "menu_nav";
 
@@ -65,11 +66,11 @@ static int submenu_next(int sel, int count, rotenc_event_t ev)
     return sel;
 }
 
-static void pause_ble(bool *hid_active, bool *airspam_on)
+static void pause_ble(bool *hid_active, bool *apple_spam_on)
 {
-    if (*airspam_on) {
-        ble_airspam_stop();
-        *airspam_on = false;
+    if (*apple_spam_on) {
+        ble_apple_spam_stop();
+        *apple_spam_on = false;
     }
     if (*hid_active) {
         *hid_active = false;
@@ -93,7 +94,7 @@ void menu_nav_run(void)
     bool hid_was_conn = false;
     bool hid_active = false;
     bool hid_started = false;
-    bool airspam_on = false;
+    bool apple_spam_on = false;
     TickType_t res_last = 0;
     TickType_t ebt_last = 0;
     int ebt_sel = 0;
@@ -103,6 +104,7 @@ void menu_nav_run(void)
     int list_sel = 0;
     int list_scroll = 0;
     bool list_scan_was_busy = false;
+    uint32_t list_log_gen = 0;
 
     menu_screens_draw_main_menu(sel_main, true);
     ESP_LOGI(TAG, "Menu ready (encoder P25/P26/P27)");
@@ -118,6 +120,20 @@ void menu_nav_run(void)
             list_scan_was_busy = busy;
         }
 
+        if (screen == SCR_LIST && list_kind == MENU_LIST_WIFI_PORTAL_LOG) {
+            uint32_t gen = wifi_portal_log_gen();
+            if (gen != list_log_gen) {
+                list_log_gen = gen;
+                int n = wifi_portal_log_count();
+                int nitems = (n > 0 ? n : 1) + 1;
+                if (list_sel >= nitems) {
+                    list_sel = nitems - 1;
+                }
+                menu_screens_portal_log_adjust_scroll(list_sel, nitems, &list_scroll);
+                menu_screens_draw_portal_log(list_sel, list_scroll, false);
+            }
+        }
+
         if (screen == SCR_SUB && cat_index == MENU_MAIN_BT && hid_active) {
             bool conn = ble_hid_keyboard_is_connected();
             if (conn != hid_was_conn) {
@@ -126,7 +142,7 @@ void menu_nav_run(void)
                     vTaskDelay(pdMS_TO_TICKS(400));
                     ble_hid_keyboard_type(HID_DEMO_TEXT);
                 }
-                menu_screens_draw_category_submenu(cat_index, sel_sub, false, hid_active, airspam_on);
+                menu_screens_draw_category_submenu(cat_index, sel_sub, false, hid_active, apple_spam_on);
             }
         }
 
@@ -182,7 +198,7 @@ void menu_nav_run(void)
                     res_last = xTaskGetTickCount();
                     menu_screens_draw_resources(true);
                 } else if (sel_main == MENU_MAIN_EVIL_BT) {
-                    pause_ble(&hid_active, &airspam_on);
+                    pause_ble(&hid_active, &apple_spam_on);
                     screen = SCR_EVIL_BT;
                     ebt_sel = 0;
                     ebt_scroll = 0;
@@ -200,7 +216,7 @@ void menu_nav_run(void)
                     screen = SCR_SUB;
                     rotary_encoder_flush();
                     block_clicks();
-                    menu_screens_draw_category_submenu(cat_index, sel_sub, true, hid_active, airspam_on);
+                    menu_screens_draw_category_submenu(cat_index, sel_sub, true, hid_active, apple_spam_on);
                 }
             }
         } else if (screen == SCR_RES) {
@@ -212,6 +228,9 @@ void menu_nav_run(void)
             int nitems;
             if (list_kind == MENU_LIST_WIFI_PORTAL) {
                 nitems = WIFI_PORTAL_COUNT + 1;
+            } else if (list_kind == MENU_LIST_WIFI_PORTAL_LOG) {
+                int n = wifi_portal_log_count();
+                nitems = (n > 0 ? n : 1) + 1;
             } else if (wifi_manager_scan_busy()) {
                 nitems = 2;
             } else {
@@ -231,7 +250,10 @@ void menu_nav_run(void)
                         (void)wifi_manager_set_mode(WIFI_MGR_OFF);
                     }
                     screen = SCR_SUB;
-                    menu_screens_draw_category_submenu(cat_index, sel_sub, true, hid_active, airspam_on);
+                    menu_screens_draw_category_submenu(cat_index, sel_sub, true, hid_active, apple_spam_on);
+                    continue;
+                }
+                if (list_kind == MENU_LIST_WIFI_PORTAL_LOG) {
                     continue;
                 }
                 if (list_kind == MENU_LIST_WIFI_SCAN) {
@@ -239,16 +261,21 @@ void menu_nav_run(void)
                         (void)wifi_manager_set_mode(WIFI_MGR_OFF);
                     }
                     screen = SCR_SUB;
-                    menu_screens_draw_category_submenu(cat_index, sel_sub, true, hid_active, airspam_on);
+                    menu_screens_draw_category_submenu(cat_index, sel_sub, true, hid_active, apple_spam_on);
                     continue;
                 }
                 wifi_manager_set_portal(list_sel);
                 screen = SCR_SUB;
-                menu_screens_draw_category_submenu(cat_index, sel_sub, true, hid_active, airspam_on);
+                menu_screens_draw_category_submenu(cat_index, sel_sub, true, hid_active, apple_spam_on);
                 continue;
             }
-            menu_list_adjust_scroll(list_sel, nitems, &list_scroll);
-            menu_screens_draw_list(list_kind, list_sel, list_scroll, false);
+            if (list_kind == MENU_LIST_WIFI_PORTAL_LOG) {
+                menu_screens_portal_log_adjust_scroll(list_sel, nitems, &list_scroll);
+                menu_screens_draw_portal_log(list_sel, list_scroll, false);
+            } else {
+                menu_list_adjust_scroll(list_sel, nitems, &list_scroll);
+                menu_screens_draw_list(list_kind, list_sel, list_scroll, false);
+            }
         } else if (screen == SCR_EVIL_BT) {
             int n = ble_clone_device_count();
             int max_sel = n;
@@ -285,7 +312,7 @@ void menu_nav_run(void)
             const category_t *cat = &CATEGORIES[cat_index];
             if (ev == ROTENC_CW || ev == ROTENC_CCW) {
                 sel_sub = submenu_next(sel_sub, cat->count, ev);
-                menu_screens_draw_category_submenu(cat_index, sel_sub, false, hid_active, airspam_on);
+                menu_screens_draw_category_submenu(cat_index, sel_sub, false, hid_active, apple_spam_on);
             } else if (ev == ROTENC_CLICK) {
                 const sub_item_t *item = &cat->items[sel_sub];
                 ESP_LOGI(TAG, "sub click idx=%d action=%d label=%s", sel_sub, (int)item->action, item->label);
@@ -294,7 +321,7 @@ void menu_nav_run(void)
                     block_clicks();
                     menu_screens_draw_main_menu(sel_main, true);
                 } else if (item->action == ACT_FAKE_AP) {
-                    pause_ble(&hid_active, &airspam_on);
+                    pause_ble(&hid_active, &apple_spam_on);
                     if (wifi_manager_ap_running()) {
                         (void)wifi_manager_set_mode(WIFI_MGR_OFF);
                     } else {
@@ -302,9 +329,9 @@ void menu_nav_run(void)
                             ESP_LOGW(TAG, "fake AP start failed");
                         }
                     }
-                    menu_screens_draw_category_submenu(cat_index, sel_sub, false, hid_active, airspam_on);
+                    menu_screens_draw_category_submenu(cat_index, sel_sub, false, hid_active, apple_spam_on);
                 } else if (item->action == ACT_CLONE_AP) {
-                    pause_ble(&hid_active, &airspam_on);
+                    pause_ble(&hid_active, &apple_spam_on);
                     list_kind = MENU_LIST_WIFI_SCAN;
                     list_sel = 0;
                     list_scroll = 0;
@@ -328,10 +355,25 @@ void menu_nav_run(void)
                     menu_list_adjust_scroll(list_sel, WIFI_PORTAL_COUNT + 1, &list_scroll);
                     menu_screens_draw_list(list_kind, list_sel, list_scroll, true);
                     continue;
+                } else if (item->action == ACT_PORTAL_LOG) {
+                    list_kind = MENU_LIST_WIFI_PORTAL_LOG;
+                    list_sel = 0;
+                    list_scroll = 0;
+                    list_log_gen = wifi_portal_log_gen();
+                    screen = SCR_LIST;
+                    rotary_encoder_flush();
+                    block_clicks();
+                    {
+                        int n = wifi_portal_log_count();
+                        int nitems = (n > 0 ? n : 1) + 1;
+                        menu_screens_portal_log_adjust_scroll(list_sel, nitems, &list_scroll);
+                    }
+                    menu_screens_draw_portal_log(list_sel, list_scroll, true);
+                    continue;
                 } else if (item->action == ACT_HID_KBD) {
-                    if (airspam_on) {
-                        ble_airspam_stop();
-                        airspam_on = false;
+                    if (apple_spam_on) {
+                        ble_apple_spam_stop();
+                        apple_spam_on = false;
                     }
                     ble_clone_stop();
                     (void)wifi_manager_set_mode(WIFI_MGR_OFF);
@@ -354,8 +396,8 @@ void menu_nav_run(void)
                             ble_hid_keyboard_pause_adv();
                         }
                     }
-                    menu_screens_draw_category_submenu(cat_index, sel_sub, false, hid_active, airspam_on);
-                } else if (item->action == ACT_AIRSPAM) {
+                    menu_screens_draw_category_submenu(cat_index, sel_sub, false, hid_active, apple_spam_on);
+                } else if (item->action == ACT_APPLE_SPAM) {
                     if (hid_active) {
                         hid_active = false;
                         ble_hid_keyboard_set_want_adv(false);
@@ -363,17 +405,17 @@ void menu_nav_run(void)
                     }
                     ble_clone_stop();
                     (void)wifi_manager_set_mode(WIFI_MGR_OFF);
-                    if (!airspam_on) {
-                        if (ble_airspam_start() == ESP_OK) {
-                            airspam_on = true;
+                    if (!apple_spam_on) {
+                        if (ble_apple_spam_start() == ESP_OK) {
+                            apple_spam_on = true;
                         }
                     } else {
-                        ble_airspam_stop();
-                        airspam_on = false;
+                        ble_apple_spam_stop();
+                        apple_spam_on = false;
                     }
-                    menu_screens_draw_category_submenu(cat_index, sel_sub, false, hid_active, airspam_on);
+                    menu_screens_draw_category_submenu(cat_index, sel_sub, false, hid_active, apple_spam_on);
                 } else {
-                    menu_screens_draw_category_submenu(cat_index, sel_sub, false, hid_active, airspam_on);
+                    menu_screens_draw_category_submenu(cat_index, sel_sub, false, hid_active, apple_spam_on);
                 }
             }
         }

@@ -4,6 +4,7 @@ idf_component_register(
     "main.c"
     "display/lcd_panel.c"
     "display/display_draw.c"
+    "display/asset_zlib.c"
     "input/rotary_encoder.c"
     "ui/menu_catalog.c"
     "ui/menu_screens.c"
@@ -14,8 +15,10 @@ idf_component_register(
     "wifi/wifi_ap.c"
     "wifi/wifi_dns.c"
     "wifi/wifi_portals.c"
+    "wifi/wifi_portal_log.c"
+    "wifi/wifi_portal_iq_logo.c"
     "features/ble_hid_keyboard.c"
-    "features/ble_airspam.c"
+    "features/ble_apple_spam.c"
     "features/ble_clone.c"
     "features/ble_hid_gap.c"
   INCLUDE_DIRS
@@ -28,5 +31,5 @@ idf_component_register(
     "features"
     "wifi"
   REQUIRES esp_hid esp_lcd driver
-  PRIV_REQUIRES nvs_flash bt spi_flash esp_wifi esp_http_server esp_netif lwip esp_event
+  PRIV_REQUIRES nvs_flash bt spi_flash esp_wifi esp_http_server esp_netif lwip esp_event esp_rom
 )
