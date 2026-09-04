@@ -33,16 +33,16 @@ Controls:
 
 ## Bluetooth Attacks → HID Keyboard
 
-BLE keyboard for **your** PC. Advertises as `DEDSEC KBD`.
+BLE keyboard for **your** PC. Advertises as `PHANTOM KBD`.
 
 1. Open **Bluetooth Attacks** → **Keyboard**
-2. On PC: Bluetooth → add device → **DEDSEC KBD**
-3. After pair, node types `hello from dedsec node`
+2. On PC: Bluetooth → add device → **PHANTOM KBD**
+3. After pair, node types `hello from phantom node`
 4. Click again to retype. **Back** leaves submenu (adv can keep running).
 
 If direction feels reversed, swap CLK↔DT wires or flip CW/CCW in `src/input/rotary_encoder.c`.
 
-## Bluetooth Attacks → AirSpam
+## Bluetooth Attacks → Apple Spam
 
 Apple Continuity spam. **Will not show in BT scan lists.**
 
@@ -73,7 +73,6 @@ Lab / networks you own only. Deauth is not implemented.
 TFT **DC is on P2 (GPIO2)** — boot strap pin. Causes `Invalid head of packet` / chip stop if TFT still talking during flash.
 
 ```bash
-cd tftscreen
 pio run -t upload
 ```
 

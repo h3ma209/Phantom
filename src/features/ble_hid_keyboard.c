@@ -1,5 +1,5 @@
 /**
- * BLE HID keyboard: NimBLE + esp_hidd, advertise as DEDSEC KBD.
+ * BLE HID keyboard: NimBLE + esp_hidd, advertise as PHANTOM KBD.
  *
  * Init order matters: host enable/sync before esp_hidd_dev_init, then force
  * advertising. Privacy (HS_PVCY) left off in sdkconfig — random RPA breaks
@@ -49,8 +49,8 @@ static esp_hid_device_config_t s_cfg = {
     .vendor_id = 0x16C0,
     .product_id = 0x05DF,
     .version = 0x0100,
-    .device_name = "DEDSEC KBD",
-    .manufacturer_name = "DEDSEC",
+    .device_name = "PHANTOM KBD",
+    .manufacturer_name = "PHANTOM",
     .serial_number = "0001",
     .report_maps = s_maps,
     .report_maps_len = 1,

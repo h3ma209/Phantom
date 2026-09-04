@@ -1,5 +1,5 @@
 /**
- * BLE HID keyboard peripheral (`DEDSEC KBD`).
+ * BLE HID keyboard peripheral (`PHANTOM KBD`).
  *
  * Owns NimBLE host bring-up for the device. Apple Spam and other BLE features
  * must go through the shared stack helpers below — do not init NimBLE twice.

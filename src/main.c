@@ -11,7 +11,7 @@
 #include "menu_screens.h"
 #include "menu_nav.h"
 
-static const char *TAG = "dedsec";
+static const char *TAG = "phantom";
 
 void app_main(void)
 {

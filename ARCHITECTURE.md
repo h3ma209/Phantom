@@ -1,4 +1,4 @@
-# Architecture
+# Phantom — Architecture
 
 ESP32-S NodeMCU + ILI9341 TFT (320×240 landscape). PlatformIO / ESP-IDF.
 
@@ -19,7 +19,7 @@ Lab / authorized networks only.
 | `input/` | Rotary encoder ISR → queue |
 | `ui/` | Catalog, screens, nav, shared `menu_list` |
 | `wifi/` | **wifi_manager** owns radio; scan / AP / DNS / portals are thin |
-| `features/` | BLE HID, AirSpam, BLE clone |
+| `features/` | BLE HID, Apple Spam, BLE clone |
 
 ## WiFi manager
 
@@ -43,7 +43,7 @@ Encoder: turn = move; click = activate. Fake AP click toggles on/off.
 
 ## BLE sharing
 
-One NimBLE host. HID / AirSpam / clone mutually pause advertising. Do not `ble_gap_adv_stop()` before host sync.
+One NimBLE host. HID / Apple Spam / clone mutually pause advertising. Do not `ble_gap_adv_stop()` before host sync.
 
 ## Hardware gotchas
 

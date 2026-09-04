@@ -24,7 +24,7 @@
 
 static const char *TAG = "menu_nav";
 
-#define HID_DEMO_TEXT "hello from dedsec node\n"
+#define HID_DEMO_TEXT "hello from phantom node\n"
 #define RES_REFRESH_MS 500
 #define EBT_REFRESH_MS 400
 #define EBT_VISIBLE 7
