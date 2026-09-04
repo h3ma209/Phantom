@@ -129,6 +129,22 @@ code { font-family: var(--font-body); color: var(--amber); }
   align-items: center;
   padding: 56px 0 40px;
 }
+.hero--sub { padding-top: 40px; }
+.hero__photo {
+  margin: 0;
+  border: 4px solid #fff;
+  box-shadow: 8px 8px 0 #1a1a1a;
+  background: #000;
+}
+.hero__photo img { width: 100%; display: block; }
+.hero__photo figcaption {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--mute);
+  padding: 8px 10px;
+  margin: 0;
+  border-top: 2px solid #fff;
+}
 .kicker {
   font-family: var(--font-pixel);
   font-size: 8px;
@@ -245,12 +261,15 @@ h3 { font-size: 11px; }
   gap: 14px;
 }
 .grid .card { grid-column: span 6; }
+.grid--landing .card { grid-column: span 12; min-height: 0; }
 @media (min-width: 720px) {
   .grid .card { grid-column: span 4; }
+  .grid--landing .card { grid-column: span 6; }
 }
 @media (min-width: 960px) {
   .grid .card { grid-column: span 3; }
   .grid .card:nth-child(n+5) { grid-column: span 4; }
+  .grid--landing .card { grid-column: span 3; }
 }
 .card {
   background: var(--panel);
@@ -261,6 +280,35 @@ h3 { font-size: 11px; }
 .card img { width: 90px; height: 90px; display: block; }
 .card h3 { margin: 12px 0 8px; }
 .card p { margin: 0 0 14px; color: var(--mute); font-size: 20px; }
+.card--plain { min-height: 0; }
+
+.story {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.story__block {
+  border: 2px solid #fff;
+  padding: 18px;
+  background: var(--panel);
+}
+.story__block p { color: var(--mute); margin: 10px 0 0; }
+
+.section--cta { padding-bottom: 40px; }
+.steps-card {
+  border: 2px solid var(--green);
+  padding: 22px 24px;
+  background: #071407;
+}
+.steps--big {
+  font-size: 22px;
+  color: var(--ink);
+  margin: 0 0 24px;
+  padding-left: 24px;
+}
+.steps--big li { margin: 10px 0; }
+.steps--big strong { color: var(--green); font-family: var(--font-pixel); font-size: 9px; }
+.cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
 .tag {
   font-family: var(--font-pixel);
   font-size: 7px;
@@ -493,7 +541,7 @@ figcaption {
 
 @media (max-width: 860px) {
   .nav { display: none; }
-  .hero, .device, .tables, .shots, .parts, .gotchas, .layout, .diagrams {
+  .hero, .device, .tables, .shots, .parts, .gotchas, .layout, .diagrams, .story {
     grid-template-columns: 1fr;
   }
   .stats { flex-wrap: wrap; }

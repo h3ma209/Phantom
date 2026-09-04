@@ -11,55 +11,64 @@
 
   const boot = document.getElementById("boot");
   const splash = document.getElementById("boot-splash");
-  window.setTimeout(function () {
-    splash.classList.add("is-glitch");
+  if (boot && splash) {
     window.setTimeout(function () {
-      boot.classList.add("is-gone");
+      splash.classList.add("is-glitch");
       window.setTimeout(function () {
-        boot.remove();
-      }, 420);
-    }, 1100);
-  }, 900);
+        boot.classList.add("is-gone");
+        window.setTimeout(function () {
+          boot.remove();
+        }, 420);
+      }, 1100);
+    }, 900);
+  }
 
-  let i = 2;
   const title = document.getElementById("menu-title");
   const sub = document.getElementById("menu-sub");
   const icon = document.getElementById("menu-icon");
+  const prev = document.getElementById("menu-prev");
+  const next = document.getElementById("menu-next");
 
-  function paint() {
-    const item = items[i];
-    title.textContent = item.title;
-    sub.textContent = item.sub;
-    icon.src = item.icon;
-    icon.alt = item.title;
-  }
+  if (title && sub && icon && prev && next) {
+    let i = 2;
 
-  document.getElementById("menu-prev").addEventListener("click", function () {
-    i = (i + items.length - 1) % items.length;
-    paint();
-  });
-  document.getElementById("menu-next").addEventListener("click", function () {
-    i = (i + 1) % items.length;
-    paint();
-  });
+    function paint() {
+      const item = items[i];
+      title.textContent = item.title;
+      sub.textContent = item.sub;
+      icon.src = item.icon;
+      icon.alt = item.title;
+    }
 
-  window.addEventListener("keydown", function (ev) {
-    if (ev.key === "ArrowLeft") {
+    prev.addEventListener("click", function () {
       i = (i + items.length - 1) % items.length;
       paint();
-    } else if (ev.key === "ArrowRight") {
+    });
+    next.addEventListener("click", function () {
       i = (i + 1) % items.length;
       paint();
-    }
-  });
+    });
+
+    window.addEventListener("keydown", function (ev) {
+      if (ev.key === "ArrowLeft") {
+        i = (i + items.length - 1) % items.length;
+        paint();
+      } else if (ev.key === "ArrowRight") {
+        i = (i + 1) % items.length;
+        paint();
+      }
+    });
+  }
 
   const box = document.getElementById("lightbox");
   const boxImg = document.getElementById("lightbox-img");
-  document.querySelectorAll(".shot[data-full]").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      boxImg.src = btn.getAttribute("data-full");
-      boxImg.alt = btn.querySelector("img").alt;
-      box.showModal();
+  if (box && boxImg) {
+    document.querySelectorAll(".shot[data-full]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        boxImg.src = btn.getAttribute("data-full");
+        boxImg.alt = btn.querySelector("img").alt;
+        box.showModal();
+      });
     });
-  });
+  }
 })();

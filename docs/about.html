@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About — PHANTOM technical docs</title>
+  <meta name="description" content="Hardware wiring, firmware architecture, menu catalog, and build instructions for the Phantom ESP32 handheld.">
+  <meta property="og:image" content="assets/prototype.jpg">
+  <meta property="og:image:alt" content="Phantom breadboard prototype running Evil Twin menu">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="scanlines" aria-hidden="true"></div>
+
+  <header class="top">
+    <a class="brand" href="index.html">
+      <img src="assets/icon_evil.png" width="36" height="36" alt="">
+      <span>PHANTOM</span>
+    </a>
+    <nav class="nav">
+      <a href="index.html">HOME</a>
+      <a href="#features">MENU</a>
+      <a href="#hardware">HW</a>
+      <a href="#arch">ARCH</a>
+      <a href="#build">BUILD</a>
+    </nav>
+    <a class="gh" href="https://github.com/h3ma209/Phantom" target="_blank" rel="noopener">GITHUB</a>
+  </header>
+
+  <main id="top">
+    <section class="hero hero--sub">
+      <div class="hero__copy">
+        <p class="kicker">TECHNICAL REFERENCE</p>
+        <h1>ABOUT<br>PHANTOM.</h1>
+        <p class="lede">
+          ESP32-S handheld with ILI9341 TFT and KY-040 encoder. PlatformIO / ESP-IDF firmware —
+          menu catalog, pin maps, architecture, and flash instructions.
+        </p>
+        <div class="hero__actions">
+          <a class="btn btn--green" href="#build">BUILD + FLASH</a>
+          <a class="btn" href="index.html">← PLAIN OVERVIEW</a>
+        </div>
+      </div>
+      <div class="hero__screen">
+        <div class="tft">
+          <div class="tft__chrome">
+            <span class="tft__dot"></span>
+            <span>ILI9341 · 2.8"</span>
+            <span>320×240</span>
+          </div>
+          <div class="tft__panel">
+            <img src="assets/splash.png" width="320" height="240" alt="Phantom boot splash — tiled reaper">
+            <div class="tft__scan"></div>
+          </div>
+          <p class="tft__cap">BOOT SPLASH · ASSET FROM FIRMWARE</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="section section--icons">
+      <header class="section__head">
+        <p class="kicker">MENU CATALOG</p>
+        <h2>SEVEN ROOMS.</h2>
+        <p>Same icons the TFT draws. Working tools and placeholders live in one carousel.</p>
+      </header>
+      <div class="grid">
+        <article class="card">
+          <img src="assets/icon_recon.png" width="90" height="90" alt="">
+          <h3>RECON</h3>
+          <p>Scan / map targets.</p>
+          <span class="tag tag--soon">SOON</span>
+        </article>
+        <article class="card">
+          <img src="assets/icon_deauth.png" width="90" height="90" alt="">
+          <h3>DEAUTH</h3>
+          <p>Kick clients off AP.</p>
+          <span class="tag tag--soon">SOON</span>
+        </article>
+        <article class="card">
+          <img src="assets/icon_evil.png" width="90" height="90" alt="">
+          <h3>EVIL TWIN</h3>
+          <p>Clone SSID · fake AP · captive portal · log.</p>
+          <span class="tag tag--ok">WORKING</span>
+        </article>
+        <article class="card">
+          <img src="assets/icon_bt.png" width="90" height="90" alt="">
+          <h3>BT ATTACKS</h3>
+          <p>BLE HID keyboard + Apple Continuity spam.</p>
+          <span class="tag tag--ok">WORKING</span>
+        </article>
+        <article class="card">
+          <img src="assets/icon_remote.png" width="90" height="90" alt="">
+          <h3>REMOTE</h3>
+          <p>Remote ops. HID replay stub.</p>
+          <span class="tag tag--soon">SOON</span>
+        </article>
+        <article class="card">
+          <img src="assets/icon_bt.png" width="90" height="90" alt="">
+          <h3>EVIL BT</h3>
+          <p>Scan named BLE devices. Clone advertisements.</p>
+          <span class="tag tag--ok">WORKING</span>
+        </article>
+        <article class="card">
+          <img src="assets/icon_recon.png" width="90" height="90" alt="">
+          <h3>RESOURCES</h3>
+          <p>Live heap, flash, task stats.</p>
+          <span class="tag tag--ok">WORKING</span>
+        </article>
+      </div>
+    </section>
+
+    <section id="device" class="section section--device">
+      <header class="section__head">
+        <p class="kicker">ENCODER UI</p>
+        <h2>KNOB WORLD.</h2>
+        <p>Main menu is a centered carousel. Click opens a category. Back is the last row.</p>
+      </header>
+      <div class="device">
+        <div class="device__tft">
+          <div class="menu" id="menu">
+            <img class="menu__bg" src="assets/menu_bg.png" alt="">
+            <img class="menu__cursor" id="menu-cursor" src="assets/cursor.png" alt="">
+            <div class="menu__row">
+              <button type="button" class="ghost" id="menu-prev" aria-label="previous">◀</button>
+              <div class="menu__focus">
+                <img id="menu-icon" src="assets/icon_evil.png" width="90" height="90" alt="">
+                <p id="menu-title">EVIL TWIN</p>
+                <p id="menu-sub">Rogue AP tools</p>
+              </div>
+              <button type="button" class="ghost" id="menu-next" aria-label="next">▶</button>
+            </div>
+            <p class="menu__hint">TURN = MOVE · CLICK = SELECT</p>
+          </div>
+        </div>
+        <aside class="device__meta">
+          <h3>CONTROLS</h3>
+          <ul class="kv">
+            <li><span>ROTATE</span><span>move selection</span></li>
+            <li><span>CLICK</span><span>open / toggle</span></li>
+            <li><span>BACK</span><span>last submenu row</span></li>
+          </ul>
+          <h3>EVIL TWIN FLOW</h3>
+          <ol class="steps">
+            <li>Clone AP — scan, pick SSID</li>
+            <li>Captive Portal — IQ / Komar / MyKomar / Cap</li>
+            <li>Fake AP — open AP + DNS hijack</li>
+            <li>Portal Log — view captures on device</li>
+          </ol>
+          <p class="note">Portal IP <code>172.217.28.1</code>. BLE pauses when WiFi scan or AP starts.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="hardware" class="section">
+      <header class="section__head">
+        <p class="kicker">BOM + WIRING</p>
+        <h2>THREE PARTS.</h2>
+      </header>
+      <div class="parts">
+        <article class="part">
+          <h3>ESP32-S</h3>
+          <p>NodeMCU v1.1. USB power. BLE + WiFi on 2.4 GHz.</p>
+        </article>
+        <article class="part">
+          <h3>2.8" TFT</h3>
+          <p>ILI9341 v1.2. SPI. 240×320 panel, landscape UI.</p>
+        </article>
+        <article class="part">
+          <h3>KY-040</h3>
+          <p>Rotary encoder. Turn = navigate. Click = select.</p>
+        </article>
+      </div>
+
+      <div class="tables">
+        <div>
+          <h3>TFT SPI</h3>
+          <table>
+            <thead><tr><th>TFT</th><th>BOARD</th><th>GPIO</th></tr></thead>
+            <tbody>
+              <tr><td>VCC</td><td>3V3</td><td>—</td></tr>
+              <tr><td>GND</td><td>GND</td><td>—</td></tr>
+              <tr><td>CS</td><td>P15</td><td>15</td></tr>
+              <tr><td>RESET</td><td>P4</td><td>4</td></tr>
+              <tr><td>DC / RS</td><td>P2</td><td>2</td></tr>
+              <tr><td>SDI</td><td>P23</td><td>23</td></tr>
+              <tr><td>SCK</td><td>P18</td><td>18</td></tr>
+              <tr><td>LED</td><td>3V3</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h3>ENCODER</h3>
+          <table>
+            <thead><tr><th>PIN</th><th>BOARD</th><th>GPIO</th></tr></thead>
+            <tbody>
+              <tr><td>CLK</td><td>P25</td><td>25</td></tr>
+              <tr><td>DT</td><td>P26</td><td>26</td></tr>
+              <tr><td>SW</td><td>P27</td><td>27</td></tr>
+              <tr><td>+</td><td>3V3</td><td>—</td></tr>
+              <tr><td>GND</td><td>GND</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <figure class="build-photo">
+        <button type="button" class="shot shot--wide" data-full="assets/prototype.jpg">
+          <img src="assets/prototype.jpg" alt="Phantom breadboard prototype — ESP32, ILI9341 TFT, KY-040 encoder, Evil Twin menu">
+        </button>
+        <figcaption>PROTOTYPE · BREADBOARD BUILD</figcaption>
+      </figure>
+
+      <div class="shots">
+        <figure>
+          <button type="button" class="shot" data-full="assets/pinout.jpg">
+            <img src="assets/pinout.jpg" alt="ESP32-WROOM-32D physical pinout">
+          </button>
+          <figcaption>BOARD PINOUT</figcaption>
+        </figure>
+        <figure>
+          <button type="button" class="shot" data-full="phantom_schematic.png">
+            <img src="phantom_schematic.png" alt="Phantom wiring schematic">
+          </button>
+          <figcaption>WIRING SCHEMATIC</figcaption>
+        </figure>
+      </div>
+      <p class="note">DC on GPIO2 is a boot strap pin. Hold BOOT, tap EN if upload says <code>Invalid head of packet</code>. Wire TFT LED to 3V3.</p>
+    </section>
+
+    <section id="arch" class="section">
+      <header class="section__head">
+        <p class="kicker">SOFTWARE MAP</p>
+        <h2>ONE LOOP.</h2>
+        <p><code>app_main</code> → LCD + encoder → splash → glitch-out → <code>menu_nav_run()</code>.</p>
+      </header>
+      <div class="diagrams">
+        <figure class="arch">
+          <div class="diagram">
+            <img src="phantom_boot_flow.svg" alt="Boot path: app_main to hardware init to splash to menu_nav_run">
+          </div>
+          <figcaption>BOOT PATH</figcaption>
+        </figure>
+        <figure class="arch">
+          <div class="diagram">
+            <img src="phantom_module_structure.svg" alt="Module structure: menu_nav_run, UI layer, WiFi manager, NimBLE features">
+          </div>
+          <figcaption>MODULE STRUCTURE</figcaption>
+        </figure>
+        <figure class="arch arch--full">
+          <button type="button" class="shot shot--wide" data-full="phantom_architecture.png">
+            <img src="phantom_architecture.png" alt="Phantom system architecture diagram">
+          </button>
+          <figcaption>FULL ARCHITECTURE · GENERATED FROM ARCHITECTURE.MD</figcaption>
+        </figure>
+      </div>
+      <div class="layout">
+        <div><code>board/</code><span>pin map</span></div>
+        <div><code>display/</code><span>ILI9341 + RGB565 assets</span></div>
+        <div><code>input/</code><span>encoder ISR → queue</span></div>
+        <div><code>ui/</code><span>catalog, screens, nav</span></div>
+        <div><code>wifi/</code><span>scan, AP, DNS, portals</span></div>
+        <div><code>features/</code><span>HID, Apple spam, clone</span></div>
+      </div>
+    </section>
+
+    <section id="build" class="section">
+      <header class="section__head">
+        <p class="kicker">PLATFORMIO</p>
+        <h2>BUILD + FLASH.</h2>
+      </header>
+      <pre class="term"><span class="term__prompt">$</span> pio run
+<span class="term__prompt">$</span> pio run -t upload
+<span class="term__prompt">$</span> pio device monitor</pre>
+      <p class="note">Serial @ 115200. Set <code>upload_port</code> in <code>platformio.ini</code> or pass <code>-upload-port COMx</code>.</p>
+      <div class="gotchas">
+        <article>
+          <h3>UPLOAD FAIL</h3>
+          <p>Close monitor. Hold BOOT → tap EN. Still fail: unplug TFT DC from P2, flash, reconnect. Use a data USB cable.</p>
+        </article>
+        <article>
+          <h3>BLANK SCREEN</h3>
+          <p>Hardwire TFT LED to 3V3. Check MOSI on P23.</p>
+        </article>
+        <article>
+          <h3>BROWNOUT</h3>
+          <p>WiFi scan/AP current spike. Weak USB resets to main menu. Powered hub or 5V on VIN.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="disclaimer" class="section section--legal">
+      <header class="section__head">
+        <p class="kicker">READ THIS</p>
+        <h2>DISCLAIMER.</h2>
+      </header>
+      <div class="legal">
+        <p><strong>Phantom is an educational and research project.</strong> Embedded development, wireless protocols, defensive security — not harm.</p>
+        <ul>
+          <li>Use only on networks, devices, and accounts you own, or with explicit written permission.</li>
+          <li>You are solely responsible for complying with laws where you live.</li>
+          <li>Unauthorized access, credential interception, impersonation, or harassment may be illegal.</li>
+          <li>Software provided “as is”, no warranty. Authors not liable for misuse.</li>
+          <li>Fake AP, captive portals, BLE clone, and Continuity spam are lab demonstrations.</li>
+        </ul>
+        <p>If you do not accept these terms, do not use this software.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <img src="assets/cursor.png" width="24" height="28" alt="">
+    <p>PHANTOM · NON-COMMERCIAL EDUCATIONAL USE · <a href="index.html">HOME</a> · <a href="https://github.com/h3ma209/Phantom">SOURCE</a></p>
+  </footer>
+
+  <dialog id="lightbox" class="lightbox">
+    <img id="lightbox-img" alt="">
+    <form method="dialog"><button type="submit" class="btn">CLOSE</button></form>
+  </dialog>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

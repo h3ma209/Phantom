@@ -4,7 +4,7 @@ Handheld ESP32 pentest node with a **320×240 ILI9341 TFT** and **rotary encoder
 
 Built with **PlatformIO** and **ESP-IDF** (not Arduino).
 
-**Site:** [h3ma209.github.io/Phantom](https://h3ma209.github.io/Phantom/) — pixel UI, firmware assets.
+**Site:** [h3ma209.github.io/Phantom](https://h3ma209.github.io/Phantom/) — overview · [technical docs](https://h3ma209.github.io/Phantom/about.html)
 
 ## Disclaimer
 
