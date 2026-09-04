@@ -26,11 +26,13 @@ If you do not accept these terms, **do not use this software.**
 
 ![Phantom breadboard prototype — Evil Twin menu on ILI9341 TFT](docs/assets/prototype.jpg)
 
-| Part | Notes |
-|------|--------|
-| ESP32-S NodeMCU v1.1 | USB power; BLE + WiFi on 2.4 GHz |
-| 2.8" SPI TFT ILI9341 v1.2 | 240×320 panel, landscape UI |
-| KY-040 rotary encoder | Turn = navigate, click = select |
+| Part | Notes | ~Cost |
+|------|--------|-------|
+| ESP32-S NodeMCU v1.1 | USB power; BLE + WiFi on 2.4 GHz | **$4** used |
+| 2.8" SPI TFT ILI9341 v1.2 | 240×320 panel, landscape UI | **$5** |
+| KY-040 rotary encoder | Turn = navigate, click = select | **$1** |
+
+**Core total: ~$10** — vs $100–$300+ for many commercial wireless lab gadgets. Add a breadboard, jumper wires, and USB cable (often already in a maker bin).
 
 **Wiring:** see [WIRING.md](WIRING.md)  
 **Schematic:** [docs/phantom_schematic.png](docs/phantom_schematic.png)  
@@ -52,7 +54,7 @@ Pin map lives in `src/board/board_pins.h` and `src/input/rotary_encoder.h`.
 ### Evil Twin flow
 
 1. **Clone AP** — scan nearby networks, pick an SSID to copy.
-2. **Captive Portal** — choose an HTML template (IQ, Komar, MyKomar, Komar Cap).
+2. **Captive Portal** — choose a template (ISP Portal, Google Login, University Portal, Guest Portal).
 3. **Fake AP** — toggle on. Victim joins open AP; DNS redirects to portal at `172.217.28.1`.
 4. **Portal Log** — view credentials captured on the device.
 

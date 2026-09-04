@@ -28,7 +28,7 @@ UI never calls `esp_wifi_*`. Modes: `WIFI_MGR_OFF` / `WIFI_MGR_SCAN` / `WIFI_MGR
 - **Scan** — STA scan into a fixed cache (SSID, RSSI, channel).
 - **Clone SSID** — copy scanned name into Fake AP SSID (not BSSID/channel).
 - **Fake AP** — open soft AP at `172.217.28.1`, UDP DNS hijack (`*` → AP), HTTP portal on captive probe paths.
-- **Portals** — four HTML templates (IQ / Komar / MyKomar / Komar Cap).
+- **Portals** — four HTML templates (ISP Portal / Google Login / University Portal / Guest Portal).
 - **Tick** — `wifi_manager_tick()` in the nav loop while AP is up (DNS).
 
 BLE is paused when WiFi scan or AP starts.
