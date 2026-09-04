@@ -4,6 +4,8 @@ Handheld ESP32 pentest node with a **320×240 ILI9341 TFT** and **rotary encoder
 
 Built with **PlatformIO** and **ESP-IDF** (not Arduino).
 
+**Site:** [h3ma209.github.io/Phantom](https://h3ma209.github.io/Phantom/) — pixel UI, firmware assets.
+
 ## Disclaimer
 
 **Phantom is an educational and research project.** It exists to teach embedded development, wireless protocols, and defensive security concepts — not to enable harm.
@@ -112,7 +114,10 @@ tools/         Asset compression, diagram generators
 ```bash
 python tools/generate_schematic.py
 python tools/generate_architecture_graph.py
+python tools/export_pages_assets.py   # RGB565 headers → docs/assets PNG
 ```
+
+GitHub Pages deploys from `docs/` via `.github/workflows/pages.yml`. Repo **Settings → Pages → Source: GitHub Actions**.
 
 ## License
 

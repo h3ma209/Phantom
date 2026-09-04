@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 620" role="img" aria-labelledby="mod-title mod-desc">
+  <title id="mod-title">Phantom module structure</title>
+  <desc id="mod-desc">menu_nav_run drives UI, WiFi manager, and shared NimBLE host feature modules.</desc>
+  <defs>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;family=VT323&amp;display=swap");
+      .panel { fill: #0a0a0a; stroke: #fff; stroke-width: 2; }
+      .panel--green { stroke: #39ff14; }
+      .panel--purple { stroke: #c44dff; }
+      .panel--amber { stroke: #ffcc33; }
+      .chip { fill: #050505; stroke: #2a2a28; stroke-width: 2; }
+      .title { font-family: "Press Start 2P", monospace; font-size: 7px; fill: #fff; }
+      .head { font-family: "Press Start 2P", monospace; font-size: 8px; fill: #39ff14; }
+      .body { font-family: "VT323", monospace; font-size: 16px; fill: #8a8a82; }
+      .note { font-family: "VT323", monospace; font-size: 15px; fill: #ffcc33; }
+      .arrow { stroke: #39ff14; stroke-width: 2; fill: none; }
+      .arrow--amber { stroke: #ffcc33; }
+    </style>
+    <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L8 4 L0 8 Z" fill="#39ff14"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L8 4 L0 8 Z" fill="#ffcc33"/>
+    </marker>
+  </defs>
+
+  <rect width="680" height="620" fill="#050505"/>
+
+  <!-- menu_nav_run -->
+  <g transform="translate(230,24)">
+    <rect class="panel panel--purple" width="220" height="56"/>
+    <text class="title" x="110" y="22" text-anchor="middle">menu_nav_run</text>
+    <text class="body" x="110" y="42" text-anchor="middle">UI state machine · main loop</text>
+  </g>
+  <line class="arrow" x1="340" y1="80" x2="340" y2="108" marker-end="url(#arrow)"/>
+
+  <!-- UI layer -->
+  <g transform="translate(60,108)">
+    <rect class="panel" width="560" height="90"/>
+    <text class="head" x="20" y="24">UI LAYER · src/ui</text>
+    <rect class="chip" x="20" y="36" width="160" height="40"/>
+    <text class="body" x="100" y="62" text-anchor="middle">menu_catalog · menu_nav</text>
+    <rect class="chip" x="200" y="36" width="160" height="40"/>
+    <text class="body" x="280" y="62" text-anchor="middle">menu_screens</text>
+    <rect class="chip" x="380" y="36" width="160" height="40"/>
+    <text class="body" x="460" y="62" text-anchor="middle">menu_list (shared)</text>
+  </g>
+
+  <line class="arrow" x1="200" y1="198" x2="200" y2="228" marker-end="url(#arrow)"/>
+  <line class="arrow" x1="480" y1="198" x2="480" y2="228" marker-end="url(#arrow)"/>
+
+  <!-- wifi_manager + NimBLE -->
+  <g transform="translate(80,228)">
+    <rect class="panel panel--green" width="240" height="66"/>
+    <text class="title" x="120" y="22" text-anchor="middle">wifi_manager</text>
+    <text class="body" x="120" y="40" text-anchor="middle">sole owner of esp_wifi</text>
+    <text class="body" x="120" y="56" text-anchor="middle">OFF / SCAN / AP</text>
+  </g>
+  <g transform="translate(360,228)">
+    <rect class="panel panel--green" width="240" height="66"/>
+    <text class="title" x="120" y="22" text-anchor="middle">NIMBLE HOST</text>
+    <text class="body" x="120" y="40" text-anchor="middle">one radio stack</text>
+    <text class="body" x="120" y="56" text-anchor="middle">HID + spam + clone</text>
+  </g>
+
+  <line class="arrow arrow--amber" x1="320" y1="250" x2="360" y2="250" marker-end="url(#arrow-amber)"/>
+  <line class="arrow arrow--amber" x1="360" y1="270" x2="320" y2="270" marker-end="url(#arrow-amber)"/>
+  <text class="note" x="340" y="310" text-anchor="middle">mutual pause · one radio active</text>
+
+  <line class="arrow" x1="200" y1="294" x2="200" y2="334" marker-end="url(#arrow)"/>
+  <line class="arrow" x1="480" y1="294" x2="480" y2="334" marker-end="url(#arrow)"/>
+
+  <!-- feature modules -->
+  <g transform="translate(80,334)">
+    <rect class="panel panel--green" width="240" height="120"/>
+    <text class="head" x="20" y="24">WIFI · src/wifi</text>
+    <text class="body" x="20" y="48">wifi_scan — STA cache</text>
+    <text class="body" x="20" y="66">wifi_ap — soft AP + HTTP</text>
+    <text class="body" x="20" y="84">wifi_dns — captive redirect</text>
+    <text class="body" x="20" y="102">wifi_portal_log — captures</text>
+  </g>
+  <g transform="translate(360,334)">
+    <rect class="panel panel--green" width="240" height="120"/>
+    <text class="head" x="20" y="24">BLE · src/features</text>
+    <text class="body" x="20" y="48">keyboard — HID peripheral</text>
+    <text class="body" x="20" y="66">apple spam — Continuity</text>
+    <text class="body" x="20" y="84">ble_clone — scan + replay</text>
+  </g>
+
+  <line class="arrow" x1="200" y1="454" x2="200" y2="484" marker-end="url(#arrow)"/>
+  <line class="arrow" x1="480" y1="454" x2="480" y2="484" marker-end="url(#arrow)"/>
+
+  <!-- targets -->
+  <g transform="translate(80,484)">
+    <rect class="panel" width="240" height="52"/>
+    <text class="title" x="120" y="22" text-anchor="middle">VICTIM DEVICE</text>
+    <text class="body" x="120" y="40" text-anchor="middle">joins cloned SSID · portal</text>
+  </g>
+  <g transform="translate(360,484)">
+    <rect class="panel" width="240" height="52"/>
+    <text class="title" x="120" y="22" text-anchor="middle">NEARBY BLE</text>
+    <text class="body" x="120" y="40" text-anchor="middle">pairs · popups · cloned name</text>
+  </g>
+
+  <!-- rules -->
+  <g transform="translate(80,556)">
+    <rect class="panel panel--amber" width="520" height="48"/>
+    <text class="note" x="20" y="22">UI never calls esp_wifi_* — always through wifi_manager</text>
+    <text class="body" x="20" y="40">lab / authorized use only</text>
+  </g>
+</svg>

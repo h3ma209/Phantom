@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 200" role="img" aria-labelledby="boot-title boot-desc">
+  <title id="boot-title">Phantom boot sequence</title>
+  <desc id="boot-desc">Firmware entry through hardware init, splash screen, into the main menu navigation loop.</desc>
+  <defs>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;family=VT323&amp;display=swap");
+      .box { fill: #0a0a0a; stroke: #fff; stroke-width: 2; }
+      .box--green { stroke: #39ff14; }
+      .box--purple { stroke: #c44dff; }
+      .title { font-family: "Press Start 2P", monospace; font-size: 8px; fill: #fff; }
+      .sub { font-family: "VT323", monospace; font-size: 16px; fill: #8a8a82; }
+      .arrow { stroke: #39ff14; stroke-width: 2; fill: none; }
+    </style>
+    <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L8 4 L0 8 Z" fill="#39ff14"/>
+    </marker>
+  </defs>
+
+  <rect width="680" height="200" fill="#050505"/>
+
+  <g transform="translate(24,72)">
+    <rect class="box" width="130" height="56"/>
+    <text class="title" x="65" y="24" text-anchor="middle">app_main</text>
+    <text class="sub" x="65" y="44" text-anchor="middle">firmware entry</text>
+  </g>
+
+  <line class="arrow" x1="154" y1="100" x2="188" y2="100" marker-end="url(#arrow)"/>
+
+  <g transform="translate(188,72)">
+    <rect class="box box--green" width="140" height="56"/>
+    <text class="title" x="70" y="24" text-anchor="middle">HW INIT</text>
+    <text class="sub" x="70" y="44" text-anchor="middle">LCD + encoder</text>
+  </g>
+
+  <line class="arrow" x1="328" y1="100" x2="362" y2="100" marker-end="url(#arrow)"/>
+
+  <g transform="translate(362,72)">
+    <rect class="box box--purple" width="110" height="56"/>
+    <text class="title" x="55" y="24" text-anchor="middle">SPLASH</text>
+    <text class="sub" x="55" y="44" text-anchor="middle">draw + glitch</text>
+  </g>
+
+  <line class="arrow" x1="472" y1="100" x2="506" y2="100" marker-end="url(#arrow)"/>
+
+  <g transform="translate(506,64)">
+    <rect class="box box--green" width="150" height="72"/>
+    <text class="title" x="75" y="24" text-anchor="middle">menu_nav_run</text>
+    <text class="sub" x="75" y="44" text-anchor="middle">main loop</text>
+    <text class="sub" x="75" y="60" text-anchor="middle">blocks forever</text>
+  </g>
+</svg>
