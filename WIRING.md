@@ -1,5 +1,7 @@
 # ESP32-S NodeMCU ("P" labels) ↔ 2.8" TFT SPI 240x320 v1.2 (ILI9341)
 
+> **Educational use only.** Test on your own hardware and networks. See [README.md](README.md#disclaimer).
+
 Framework: **ESP-IDF** via PlatformIO (`framework = espidf`).
 Pins: `src/board/board_pins.h` (TFT), `src/input/rotary_encoder.h` (encoder).
 Software map: `ARCHITECTURE.md`.
@@ -64,7 +66,7 @@ Pengz0-style Fake AP on this firmware (ESP-IDF, not Arduino):
 3. **Fake AP** — toggle on. Phone joins open AP, captive page loads. IP `172.217.28.1`.
 4. Toggle Fake AP again to stop.
 
-Lab / networks you own only. Deauth is not implemented.
+Lab / networks you own only. See [README.md](README.md#disclaimer).
 
 **Power:** WiFi scan/AP draws a current spike. Weak USB → brownout reset (list flashes, back to main menu). Use a **short data USB cable**, **powered hub**, or **5V on VIN**. Firmware lowers TX power to help; still may need better supply.
 

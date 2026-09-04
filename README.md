@@ -4,7 +4,21 @@ Handheld ESP32 pentest node with a **320×240 ILI9341 TFT** and **rotary encoder
 
 Built with **PlatformIO** and **ESP-IDF** (not Arduino).
 
-> **Lab / authorized networks only.** Deauth is not implemented. Use responsibly.
+## Disclaimer
+
+**Phantom is an educational and research project.** It exists to teach embedded development, wireless protocols, and defensive security concepts — not to enable harm.
+
+By building, flashing, or running this firmware you agree that:
+
+- You will **only** use it on **networks, devices, and accounts you own**, or where you have **explicit written permission** from the owner.
+- You are **solely responsible** for your actions and for complying with all applicable laws in your country or region (including computer misuse, privacy, telecommunications, and anti-hacking statutes).
+- **Unauthorized** access to networks, interception of credentials, impersonation of access points or Bluetooth devices, or harassment of others may be **illegal** and can result in civil liability, criminal prosecution, fines, or imprisonment.
+- The authors and contributors provide this software **“as is”**, with **no warranty** of any kind. We are **not liable** for any damage, loss, legal claims, or penalties arising from your use or misuse of this project.
+- Features such as fake access points, captive portals, credential logging, BLE cloning, and Apple Continuity spam are **demonstrations for learning**. Deploying them against real users without consent is **not** supported or endorsed.
+
+If you do not accept these terms, **do not use this software.**
+
+> Deauth and similar disruptive attacks are **not implemented** in this firmware. Still — what *is* implemented can be misused. **Use responsibly.**
 
 ## Hardware
 
@@ -102,4 +116,6 @@ python tools/generate_architecture_graph.py
 
 ## License
 
-See component licenses under `managed_components/`. Application code: use at your own risk on networks you own or have permission to test.
+See component licenses under `managed_components/`.
+
+Application source is provided for **non-commercial educational use**. No permission is granted to use Phantom for illegal activity. The copyright holders disclaim all liability; **you assume full responsibility** for how you use this code.

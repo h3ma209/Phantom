@@ -4,7 +4,7 @@ ESP32-S NodeMCU + ILI9341 TFT (320×240 landscape). PlatformIO / ESP-IDF.
 
 WiFi behavior matches **pengz0** (scan → copy SSID → Fake AP + DNS + captive HTML). Code layout does **not** copy pengz0’s Arduino menus.
 
-Lab / authorized networks only.
+**Educational project only** — authorized lab use. See [README.md](README.md#disclaimer) for full disclaimer.
 
 ## Boot path
 
