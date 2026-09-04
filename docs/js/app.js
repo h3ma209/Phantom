@@ -16,7 +16,9 @@
   }
 
   function initReveal() {
-    const els = document.querySelectorAll(".section, .warn, .foot");
+    const els = document.querySelectorAll(".reveal");
+    if (!els.length) return;
+
     if (!("IntersectionObserver" in window)) {
       els.forEach(function (el) {
         el.classList.add("is-in");
@@ -32,12 +34,51 @@
           io.unobserve(entry.target);
         });
       },
-      { threshold: 0.12, rootMargin: "0px 0px -32px 0px" }
+      { threshold: 0.08, rootMargin: "0px 0px -48px 0px" }
     );
 
     els.forEach(function (el) {
-      el.classList.add("reveal");
       io.observe(el);
+    });
+  }
+
+  function initMobileNav() {
+    const toggle = document.getElementById("nav-toggle");
+    const nav = document.getElementById("site-nav");
+    if (!toggle || !nav) return;
+
+    toggle.addEventListener("click", function () {
+      const open = nav.classList.toggle("is-open");
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+
+    nav.querySelectorAll("a").forEach(function (link) {
+      link.addEventListener("click", function () {
+        nav.classList.remove("is-open");
+        toggle.setAttribute("aria-expanded", "false");
+      });
+    });
+  }
+
+  function initLightbox() {
+    const box = document.getElementById("lightbox");
+    const boxImg = document.getElementById("lightbox-img");
+    if (!box || !boxImg) return;
+
+    document.querySelectorAll(".shot[data-full]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        boxImg.src = btn.getAttribute("data-full");
+        boxImg.alt = btn.querySelector("img").alt;
+        box.showModal();
+      });
+    });
+
+    box.addEventListener("click", function (ev) {
+      if (ev.target === box) box.close();
+    });
+
+    box.addEventListener("cancel", function () {
+      box.close();
     });
   }
 
@@ -59,6 +100,8 @@
   }
 
   initReveal();
+  initMobileNav();
+  initLightbox();
 
   const title = document.getElementById("menu-title");
   const sub = document.getElementById("menu-sub");
@@ -93,6 +136,7 @@
     });
 
     window.addEventListener("keydown", function (ev) {
+      if (ev.target && (ev.target.tagName === "INPUT" || ev.target.tagName === "TEXTAREA")) return;
       if (ev.key === "ArrowLeft") {
         i = (i + items.length - 1) % items.length;
         paint();
@@ -100,18 +144,6 @@
         i = (i + 1) % items.length;
         paint();
       }
-    });
-  }
-
-  const box = document.getElementById("lightbox");
-  const boxImg = document.getElementById("lightbox-img");
-  if (box && boxImg) {
-    document.querySelectorAll(".shot[data-full]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        boxImg.src = btn.getAttribute("data-full");
-        boxImg.alt = btn.querySelector("img").alt;
-        box.showModal();
-      });
     });
   }
 })();
