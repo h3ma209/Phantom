@@ -14,7 +14,11 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <div id="vignette" aria-hidden="true"></div>
+  <div id="dither" aria-hidden="true"></div>
   <div id="scanlines" aria-hidden="true"></div>
+  <div id="scan-beam" aria-hidden="true"></div>
+  <div id="crt-flicker" aria-hidden="true"></div>
 
   <header class="top">
     <a class="brand" href="index.html">
@@ -61,7 +65,7 @@
       </div>
     </section>
 
-    <section id="features" class="section section--icons">
+    <section id="features" class="section section--icons reveal">
       <header class="section__head">
         <p class="kicker">MENU CATALOG</p>
         <h2>SEVEN ROOMS.</h2>
@@ -113,7 +117,7 @@
       </div>
     </section>
 
-    <section id="device" class="section section--device">
+    <section id="device" class="section section--device reveal">
       <header class="section__head">
         <p class="kicker">ENCODER UI</p>
         <h2>KNOB WORLD.</h2>
@@ -155,7 +159,7 @@
       </div>
     </section>
 
-    <section id="hardware" class="section">
+    <section id="hardware" class="section reveal">
       <header class="section__head">
         <p class="kicker">BOM + WIRING</p>
         <h2>THREE PARTS.</h2>
@@ -231,7 +235,7 @@
       <p class="note">DC on GPIO2 is a boot strap pin. Hold BOOT, tap EN if upload says <code>Invalid head of packet</code>. Wire TFT LED to 3V3.</p>
     </section>
 
-    <section id="arch" class="section">
+    <section id="arch" class="section reveal">
       <header class="section__head">
         <p class="kicker">SOFTWARE MAP</p>
         <h2>ONE LOOP.</h2>
@@ -267,7 +271,7 @@
       </div>
     </section>
 
-    <section id="build" class="section">
+    <section id="build" class="section reveal">
       <header class="section__head">
         <p class="kicker">PLATFORMIO</p>
         <h2>BUILD + FLASH.</h2>
@@ -292,7 +296,7 @@
       </div>
     </section>
 
-    <section id="disclaimer" class="section section--legal">
+    <section id="disclaimer" class="section section--legal reveal">
       <header class="section__head">
         <p class="kicker">READ THIS</p>
         <h2>DISCLAIMER.</h2>

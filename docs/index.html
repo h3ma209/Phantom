@@ -14,7 +14,11 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <div id="vignette" aria-hidden="true"></div>
+  <div id="dither" aria-hidden="true"></div>
   <div id="scanlines" aria-hidden="true"></div>
+  <div id="scan-beam" aria-hidden="true"></div>
+  <div id="crt-flicker" aria-hidden="true"></div>
   <div id="boot" class="boot" aria-hidden="true">
     <div class="boot__bezel">
       <img id="boot-splash" class="boot__splash" src="assets/splash.png" alt="">
@@ -40,7 +44,7 @@
     <section class="hero">
       <div class="hero__copy">
         <p class="kicker">DIY · HANDHELD · EDUCATIONAL</p>
-        <h1>LEARN HOW<br>WIRELESS<br>TRICKS WORK.</h1>
+        <h1><span class="line">LEARN HOW</span><br><span class="line">WIRELESS</span><br><span class="line">TRICKS WORK.</span></h1>
         <p class="lede">
           Phantom is a small gadget you build yourself — a screen, a twist knob, and open-source firmware.
           Explore fake WiFi hotspots, phone pairing demos, and Bluetooth behavior in a lab you control.
@@ -56,14 +60,14 @@
         </ul>
       </div>
       <div class="hero__screen">
-        <figure class="hero__photo">
+        <figure class="hero__photo dither-img">
           <img src="assets/prototype.jpg" width="640" height="480" alt="Phantom prototype on a breadboard — small screen, twist knob, and microcontroller">
           <figcaption>REAL BUILD · SCREEN + KNOB + ESP32 BOARD</figcaption>
         </figure>
       </div>
     </section>
 
-    <section class="warn">
+    <section class="warn reveal">
       <img src="assets/icon_deauth.png" width="56" height="56" alt="">
       <p>
         <strong>FOR LEARNING ONLY.</strong> Use on networks and devices you own, or with written permission.
@@ -71,7 +75,7 @@
       </p>
     </section>
 
-    <section id="what" class="section">
+    <section id="what" class="section reveal">
       <header class="section__head">
         <p class="kicker">THE IDEA</p>
         <h2>WHAT IS PHANTOM?</h2>
@@ -96,7 +100,7 @@
       </div>
     </section>
 
-    <section id="does" class="section section--icons">
+    <section id="does" class="section section--icons reveal">
       <header class="section__head">
         <p class="kicker">IN PLAIN ENGLISH</p>
         <h2>WHAT CAN IT DO?</h2>
@@ -130,7 +134,7 @@
       </div>
     </section>
 
-    <section id="start" class="section section--cta">
+    <section id="start" class="section section--cta reveal">
       <header class="section__head">
         <p class="kicker">YOUR TURN</p>
         <h2>HOW DO I START?</h2>
@@ -149,7 +153,7 @@
       </div>
     </section>
 
-    <section id="disclaimer" class="section section--legal">
+    <section id="disclaimer" class="section section--legal reveal">
       <header class="section__head">
         <p class="kicker">READ THIS</p>
         <h2>USE IT RESPONSIBLY.</h2>
